@@ -1,5 +1,7 @@
 # Event Management System
 
+.
+
 ## Specification
 
 user management- login / sign up / roles assigned to users  ( organisers , admins and normal users) 
