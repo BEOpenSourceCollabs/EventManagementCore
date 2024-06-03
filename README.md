@@ -15,6 +15,27 @@ git clone https://github.com/BEOpenSourceCollabs/EventManagementCore
 cd EventManagementCore
 ```
 
+## Local database setup
+- You need [Docker](https://www.docker.com/products/docker-desktop/) installed and working.
+- Create a `db.env` file in project root with following variables
+
+    ```text
+    # Pgadmin credentials
+    PGADMIN_DEFAULT_EMAIL=admin@admin.com
+    PGADMIN_DEFAULT_PASSWORD=12345
+
+    # Postgresql credentials
+    POSTGRES_USER=postgres
+    POSTGRES_PASSWORD=postgres
+    ```
+  you can change these values if you want. If you change postgresql credentials, make sure to change them specially the `OWNER` in `schema.sql`
+
+- Run following command, 
+    ```shell
+    $ docker compose up
+    ```
+- Once the containers are running , postgresql will be accessible on `localhost:5432` and Pgadmin will be accessible on `localhost:8888`. 
+
 ### Run
 
 ```bash
