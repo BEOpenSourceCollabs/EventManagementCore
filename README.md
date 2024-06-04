@@ -36,6 +36,20 @@ cd EventManagementCore
     ```
 - Once the containers are running , postgresql will be accessible on `localhost:5432` and Pgadmin will be accessible on `localhost:8888`. 
 
+Next setup the application environment and add the database configuration.
+
+- Create a `.env` file in the project root with the following variables:
+
+  ```text
+  DATABASE_HOST=127.0.0.1
+  DATABASE_USER=postgres
+  DATABASE_PASSWORD=postgres
+  DATABASE_NAME=event-mgmt-db
+  DATABASE_PORT=5432
+  DATABASE_SSL_MODE=disable
+  ```
+  Ensure to update these to match your database configuration (these are set in `db.env` for development).
+
 ### Run
 
 ```bash

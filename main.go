@@ -3,11 +3,21 @@ package main
 import (
 	"net/http"
 
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/middleware"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/persist"
 )
 
 func main() {
+	envConfig := config.NewEnvironmentConfiguration()
+
+	/* todo: database */
+	_, err := persist.NewDatabase(envConfig.Database)
+	if err != nil {
+		panic(err)
+	}
+
 	// Create a new instance of the appRouter
 	router := net.NewAppRouter()
 
