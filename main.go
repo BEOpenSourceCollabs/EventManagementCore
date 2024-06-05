@@ -44,6 +44,14 @@ func main() {
 		),
 	)
 
+	// initialize and mount routes
+	routes.NewUserRoutes(
+		router,
+		repository.NewUserRepository(
+			database,
+		),
+	)
+
 	// Start the HTTP server on port 8081 using the router
 	http.ListenAndServe(":8081", router)
 }
