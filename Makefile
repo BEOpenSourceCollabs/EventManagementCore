@@ -1,5 +1,11 @@
 .DEFAULT_GOAL := run
 
+# Export all environments from within .env if it exists
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
 .PHONY: all
 
 # List prints all targets in this makefile.
