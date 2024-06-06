@@ -50,13 +50,13 @@ Next setup the application environment and add the database configuration.
   ```
   Ensure to update these to match your database configuration (these are set in `db.env` for development).
 
-### Run
+## Run
 
 ```bash
 make run
 ```
 
-### Run Tests
+## Run Tests
 
 ```bash
 make test
@@ -66,4 +66,7 @@ make test
 make test.unit
 ```
 
-test
+## documentation 
+
+Open API documentation with interactive client is available on route [http://localhost:8081/swagger](http://localhost:8081/swagger) and 
+the raw json schema can be downloaded on [http://localhost:8081/swagger.json](http://localhost:8081/swagger.json).
