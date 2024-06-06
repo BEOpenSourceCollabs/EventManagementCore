@@ -10,10 +10,13 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5000/api/v1"
+      "url": "http://localhost:8081/"
     }
   ],
   "tags": [
+    {
+      "name": "default"
+    },
     {
       "name": "auth",
       "description": "user authentication"
@@ -28,6 +31,25 @@
     }
   ],
   "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "default"
+        ],
+        "summary": "health check endpoint",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "health check success",
+            "content": {
+              "text/html": {
+                "example": "Ok"
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/login": {
       "post": {
         "tags": [
