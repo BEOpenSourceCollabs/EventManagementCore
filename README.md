@@ -64,9 +64,13 @@ make test
 # or 
 
 make test.unit
+<<<<<<< HEAD
 ```
 
 ## documentation 
 
 Open API documentation with interactive client is available on route [http://localhost:8081/swagger](http://localhost:8081/swagger) and 
 the raw json schema can be downloaded on [http://localhost:8081/swagger.json](http://localhost:8081/swagger.json).
+=======
+```
+>>>>>>> 18ba8c313238095b0de216b2c9878195b1fe0394
