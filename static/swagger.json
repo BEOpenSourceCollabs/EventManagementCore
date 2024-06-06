@@ -1,0 +1,468 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Event Management API",
+    "description": "This is a backend for event management application",
+    "license": {
+      "name": "MIT"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8081/"
+    }
+  ],
+  "tags": [
+    {
+      "name": "default"
+    },
+    {
+      "name": "auth",
+      "description": "user authentication"
+    },
+    {
+      "name": "events",
+      "description": "operations about events"
+    },
+    {
+      "name": "user",
+      "description": "Operations about user"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "default"
+        ],
+        "summary": "health check endpoint",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "health check success",
+            "content": {
+              "text/html": {
+                "example": "Ok"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "login using credentials",
+        "operationId": "login",
+        "requestBody": {
+          "description": "credentials",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid Credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginFail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error most likely due to service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "sign up as new user",
+        "operationId": "register",
+        "requestBody": {
+          "description": "user's basic information",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad sign up request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error most likely due to service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/check": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "check",
+        "summary": "check if access token is still valid",
+        "responses": {
+          "200": {
+            "description": "Successful login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "tokenAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "9dc2391b-595e-4a9a-aefb-75dbe18fe5ca"
+          },
+          "username": {
+            "type": "string",
+            "example": "john_doe"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "John"
+          },
+          "last_name": {
+            "type": "string",
+            "example": "Doe"
+          },
+          "role": {
+            "type": "string",
+            "example": "organizer"
+          }
+        }
+      },
+      "CheckResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserInfo"
+          }
+        }
+      },
+      "BadRequestResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "code": {
+            "type": "string",
+            "example": "BAD_REQUEST"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "example": "validation error",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RegisterRequest": {
+        "required": [
+          "email",
+          "username",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "example@email.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "password must be at least 6 characters long and alphanumeric"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "john"
+          },
+          "last_name": {
+            "type": "string",
+            "example": "doe"
+          },
+          "username": {
+            "type": "string",
+            "example": "john_doe"
+          }
+        }
+      },
+      "RegisterResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "string",
+            "example": "successfully signed up"
+          }
+        }
+      },
+      "ServerErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "code": {
+            "type": "string",
+            "example": "INTERNAL_SERVER_ERROR"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "example": "Service is unavailable",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginSuccessDTO"
+          }
+        }
+      },
+      "LoginRequest": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "example@email.com"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginSuccessDTO": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserInfo"
+          },
+          "access_token": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+          }
+        }
+      },
+      "LoginFail": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "code": {
+            "type": "string",
+            "example": "AUTH_INVALID_CREDENTIALS"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "example": "invalid credentials",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "EventListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/EventsArray"
+          }
+        }
+      },
+      "Organizer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "9dc2391b-595e-4a9a-aefb-75dbe18fe5ca"
+          },
+          "username": {
+            "type": "string",
+            "example": "john_doe"
+          },
+          "avatar": {
+            "type": "string",
+            "example": "https://s3-bucket/avatar.png"
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "1df76107-4585-49f0-b772-85e830b437af"
+          },
+          "name": {
+            "type": "string",
+            "example": "Tomorrowland 2024"
+          },
+          "description": {
+            "type": "string",
+            "example": "most popular music festival in the world"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-string",
+            "example": "2024-06-05T12:29:25.432Z"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-string",
+            "example": "2024-06-06T12:29:25.432Z"
+          },
+          "is_paid": {
+            "type": "boolean",
+            "example": false
+          },
+          "event_type": {
+            "type": "string",
+            "example": "offline"
+          },
+          "country": {
+            "type": "string",
+            "example": "US"
+          },
+          "city": {
+            "type": "string",
+            "example": "New York City"
+          },
+          "likes": {
+            "type": "number",
+            "example": 1882
+          },
+          "follows": {
+            "type": "number",
+            "example": 3123
+          },
+          "attendees": {
+            "type": "number",
+            "example": 11313
+          },
+          "organizer": {
+            "$ref": "#/components/schemas/Organizer"
+          }
+        }
+      },
+      "EventsArray": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Event"
+        }
+      }
+    },
+    "securitySchemes": {
+      "tokenAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
