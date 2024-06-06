@@ -12,6 +12,9 @@ import (
 func main() {
 	envConfig := config.NewEnvironmentConfiguration()
 
+	// Create a static handler to serve contents of 'static' folder.
+	fs := http.FileServer(http.Dir("./static"))
+
 	/* todo: database */
 	_, err := persist.NewDatabase(envConfig.Database)
 	if err != nil {
@@ -21,10 +24,13 @@ func main() {
 	// Create a new instance of the appRouter
 	router := net.NewAppRouter()
 
+	// Register static files handler
+	router.Get("/", fs)
+
 	// Register a GET route for the root URL ("/") with CORS middleware
-	router.Get("/", middleware.CorsMiddleware(http.HandlerFunc(
+	router.Get("/health", middleware.CorsMiddleware(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("Hello, world!"))
+			w.Write([]byte("Ok"))
 		},
 	), middleware.WideOpen)) // Use the WideOpen CORS options to allow unrestricted access
 
