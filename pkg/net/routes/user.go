@@ -20,47 +20,12 @@ func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepositor
 	}
 
 	// mount routes to router.
-	router.Get("/api/users/by-id/{id}", http.HandlerFunc(routes.GetUserById))
-	router.Get("/api/users/by-username/{username}", http.HandlerFunc(routes.GetUserByUsername))
 	router.Post("/api/users/create", http.HandlerFunc(routes.PostCreateUser))
+	router.Get("/api/users/{id}", http.HandlerFunc(routes.GetUserById))
+	router.Put("/api/users/update/{id}", http.HandlerFunc(routes.PutUpdateUserById))
+	router.Delete("/api/users/delete/{id}", http.HandlerFunc(routes.DeleteUserById))
 
 	return routes
-}
-
-func (u userRoutes) GetUserById(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-
-	user, err := u.userRepository.GetUserByID(id)
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user": user,
-	})
-}
-
-func (u userRoutes) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
-	username := r.PathValue("username")
-
-	user, err := u.userRepository.GetUserByUsername(username)
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user": user,
-	})
 }
 
 func (u userRoutes) PostCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -83,5 +48,75 @@ func (u userRoutes) PostCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success": payload,
+	})
+}
+
+func (u userRoutes) GetUserById(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	user, err := u.userRepository.GetUserByID(id)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user": user,
+	})
+}
+
+func (u userRoutes) PutUpdateUserById(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	// Load the user first
+	user, err := u.userRepository.GetUserByID(id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Merge in the request payload
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// submit the changes
+	if err := u.userRepository.UpdateUser(user); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user": user,
+	})
+}
+
+func (u userRoutes) DeleteUserById(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	if err := u.userRepository.DeleteUser(id); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
 	})
 }

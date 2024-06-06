@@ -39,7 +39,7 @@ func main() {
 	// initialize and mount routes
 	routes.NewUserRoutes(
 		router,
-		repository.NewUserRepository(
+		repository.NewSQLUserRepository(
 			database,
 		),
 	)

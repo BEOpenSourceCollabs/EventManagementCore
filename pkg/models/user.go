@@ -7,7 +7,7 @@ type UserModel struct {
 	ID        string     `db:"id"`
 	Username  string     `db:"username"`
 	Email     string     `db:"email"`
-	Password  string     `db:"password"`
+	Password  string     `db:"password" json:"-"`
 	FirstName string     `db:"first_name"`
 	LastName  string     `db:"last_name"`
 	BirthDate *time.Time `db:"birth_date"`
