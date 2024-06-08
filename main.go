@@ -11,6 +11,7 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/middleware"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/routes"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/service"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/persist"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
 )
@@ -36,19 +37,24 @@ func main() {
 	router.Get("/", fs)
 
 	// Register a GET route for the root URL ("/") with CORS middleware
-	router.Get("/health", middleware.CorsMiddleware(http.HandlerFunc(
+	router.Get("/api/health", middleware.CorsMiddleware(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Ok"))
 		},
 	), middleware.WideOpen)) // Use the WideOpen CORS options to allow unrestricted access
 
+	userRepo := repository.NewSQLUserRepository(
+		database,
+	)
+
 	// initialize and mount routes
 	routes.NewUserRoutes(
 		router,
-		repository.NewSQLUserRepository(
-			database,
-		),
+		userRepo,
 	)
+
+	authService := service.NewAuthService(&envConfig, logger, userRepo)
+	routes.NewAuthRoutes(router, authService, logger)
 
 	// http server configured with some defaults
 	srv := &http.Server{
