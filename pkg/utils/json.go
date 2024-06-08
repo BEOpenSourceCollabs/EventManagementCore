@@ -10,8 +10,7 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 )
 
-// reads json body into 'dest' and returns common errors,
-// make sure the `dest` is never nil otherwise it will panic
+// reads json body into 'dest' make sure the `dest` is never nil otherwise it will panic
 func ReadJson(w http.ResponseWriter, r *http.Request, dest interface{}) error {
 
 	if dest == nil {
@@ -28,6 +27,7 @@ func ReadJson(w http.ResponseWriter, r *http.Request, dest interface{}) error {
 
 }
 
+// handles common json parsing errors and writes error response
 func HandleCommonJsonError(err error, w http.ResponseWriter) {
 
 	var maxBytesError *http.MaxBytesError
