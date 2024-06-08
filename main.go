@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
@@ -14,13 +18,15 @@ import (
 func main() {
 	envConfig := config.NewEnvironmentConfiguration()
 
+	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+
 	// Create a static handler to serve contents of 'static' folder.
 	fs := http.FileServer(http.Dir("./static"))
 
 	// initialize database from environment configuration
 	database, err := persist.NewDatabase(envConfig.Database)
 	if err != nil {
-		panic(err)
+		logger.Fatal(err)
 	}
 
 	// Create a new instance of the appRouter
@@ -44,6 +50,20 @@ func main() {
 		),
 	)
 
-	// Start the HTTP server on port 8081 using the router
-	http.ListenAndServe(":8081", router)
+	// http server configured with some defaults
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", envConfig.Port),
+		Handler:      middleware.RequestLoggerMiddleware(router, logger),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+
+	logger.Printf("Starting server in %s mode on %s", envConfig.Env, srv.Addr)
+
+	// Start the HTTP server using the router
+	err = srv.ListenAndServe()
+
+	logger.Fatal(err)
+
 }
