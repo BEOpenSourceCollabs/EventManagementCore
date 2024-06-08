@@ -163,14 +163,14 @@ func (r *sqlUserRepository) InsertUser(user *models.UserModel) error {
 	args := []interface{}{user.Email, user.Password, user.Username}
 	argsCounter := 3
 
-	if user.FirstName != "" {
+	if user.FirstName.String != "" {
 		argsCounter++
 		insertQ += ", first_name"
 		valuesQ += fmt.Sprintf(", $%d", argsCounter)
 		args = append(args, user.FirstName)
 	}
 
-	if user.LastName != "" {
+	if user.LastName.String != "" {
 		argsCounter++
 		insertQ += ", last_name"
 		valuesQ += fmt.Sprintf(", $%d", argsCounter)
