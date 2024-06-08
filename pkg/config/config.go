@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"strconv"
 
@@ -9,6 +10,7 @@ import (
 
 // Configuration .
 type Configuration struct {
+	Secret   string
 	Env      GoEnv
 	Port     int
 	Database persist.DatabaseConfiguration
@@ -23,6 +25,12 @@ func NewEnvironmentConfiguration() Configuration {
 
 	if err != nil {
 		port = 8081
+	}
+
+	secret, ok := os.LookupEnv("SECRET")
+
+	if !ok || secret == "" {
+		panic(errors.New("invalid environment configuration: SECRET is required"))
 	}
 
 	return Configuration{
