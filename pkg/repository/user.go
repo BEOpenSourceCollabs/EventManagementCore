@@ -16,6 +16,7 @@ type UserRepository interface {
 	UpdateUser(user *models.UserModel) error
 	DeleteUser(id string) error
 	GetUserByEmail(email string) (*models.UserModel, error)
+	InsertUser(user *models.UserModel) error
 }
 
 type sqlUserRepository struct {
@@ -152,6 +153,41 @@ func (r *sqlUserRepository) GetUserByEmail(email string) (*models.UserModel, err
 	}
 
 	return user, nil
+}
+
+func (r *sqlUserRepository) InsertUser(user *models.UserModel) error {
+
+	//include required fields in columns first
+	insertQ := "INSERT INTO public.users (email, password, username"
+	valuesQ := "VALUES($1, $2, $3"
+	args := []interface{}{user.Email, user.Password, user.Username}
+	argsCounter := 3
+
+	if user.FirstName != "" {
+		argsCounter++
+		insertQ += ", first_name"
+		valuesQ += fmt.Sprintf(", $%d", argsCounter)
+		args = append(args, user.FirstName)
+	}
+
+	if user.LastName != "" {
+		argsCounter++
+		insertQ += ", last_name"
+		valuesQ += fmt.Sprintf(", $%d", argsCounter)
+		args = append(args, user.LastName)
+	}
+
+	insertQ += ") "
+	valuesQ += ") RETURNING id"
+
+	query := insertQ + valuesQ
+
+	err := r.database.QueryRow(query, args...).Scan(&user.ID)
+	if err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return nil
 }
 
 var (
