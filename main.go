@@ -54,7 +54,13 @@ func main() {
 	)
 
 	authService := service.NewAuthService(&envConfig, logger, userRepo)
-	routes.NewAuthRoutes(router, authService, logger)
+
+	routes.NewAuthRoutes(
+		router,
+		authService,
+		logger,
+		&envConfig,
+	)
 
 	// http server configured with some defaults
 	srv := &http.Server{
