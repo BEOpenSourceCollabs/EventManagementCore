@@ -6,29 +6,33 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/middleware"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 	"github.com/go-playground/validator/v10"
 )
 
 type authRoutes struct {
+	config      *config.Configuration
 	logger      *log.Logger
 	authService *service.AuthService
 }
 
-func NewAuthRoutes(router net.AppRouter, authService *service.AuthService, logger *log.Logger) *authRoutes {
+func NewAuthRoutes(router net.AppRouter, authService *service.AuthService, logger *log.Logger, config *config.Configuration) *authRoutes {
 
 	routes := &authRoutes{
 		authService: authService,
 		logger:      logger,
+		config:      config,
 	}
 
 	router.Post("/api/auth/login", http.HandlerFunc(routes.HandleLogin))
 	router.Post("/api/auth/register", http.HandlerFunc(routes.HandleSignUp))
-	router.Get("/api/auth/check", http.HandlerFunc(routes.HandleCheck))
+	router.Get("/api/auth/check", middleware.ProtectMiddleware(http.HandlerFunc(routes.HandleCheck), config.Secret))
 
 	return routes
 }
@@ -113,5 +117,21 @@ func (authRouter *authRoutes) HandleSignUp(w http.ResponseWriter, r *http.Reques
 
 // checks if access token is valid
 func (authRouter *authRoutes) HandleCheck(w http.ResponseWriter, r *http.Request) {
-	utils.WriteErrorJsonResponse(w, "Not implemented", http.StatusInternalServerError, nil)
+
+	user := r.Context().Value(constants.USER_CONTEXT_KEY).(*dtos.JwtPayload)
+
+	result, err := authRouter.authService.CheckUser(user.Id)
+
+	if err != nil {
+
+		if errors.Is(err, service.ErrUserNotFound) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{fmt.Sprintf("user with id %s does not exist", user.Id)})
+			return
+		}
+
+		utils.WriteInternalErrorJsonResponse(w)
+		return
+	}
+
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
 }

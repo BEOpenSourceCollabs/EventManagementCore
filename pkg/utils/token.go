@@ -14,7 +14,7 @@ func GenerateToken(payload *dtos.JwtPayload, secret string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":  payload.Id,
 		"role": payload.Role,
-		"exp":  time.Now().Add(time.Hour * 72).Unix(),
+		"exp":  time.Now().Add(time.Hour * 1).Unix(),
 	})
 
 	// Sign and get the complete encoded token as a string using the secret

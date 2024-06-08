@@ -15,6 +15,7 @@ import (
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserAlreadyExists  = errors.New("user already exists with given email")
+	ErrUserNotFound       = errors.New("user not found")
 )
 
 type AuthService struct {
@@ -103,4 +104,22 @@ func (svc *AuthService) ValidateSignUp(dto *dtos.Register) (string, error) {
 	}
 
 	return "successfully signed up", nil
+}
+
+func (svc *AuthService) CheckUser(id string) (*dtos.LoginUser, error) {
+
+	existingUser, err := svc.userRepo.GetUserByID(id)
+
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	return &dtos.LoginUser{
+		ID:        existingUser.ID,
+		Username:  existingUser.Username,
+		FirstName: existingUser.FirstName.String,
+		LastName:  existingUser.LastName.String,
+		Role:      existingUser.Role,
+	}, nil
+
 }
