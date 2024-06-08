@@ -15,6 +15,7 @@ type UserRepository interface {
 	GetUserByID(id string) (*models.UserModel, error)
 	UpdateUser(user *models.UserModel) error
 	DeleteUser(id string) error
+	GetUserByEmail(email string) (*models.UserModel, error)
 }
 
 type sqlUserRepository struct {
@@ -123,6 +124,34 @@ func (r *sqlUserRepository) DeleteUser(id string) error {
 	}
 
 	return nil
+}
+
+func (r *sqlUserRepository) GetUserByEmail(email string) (*models.UserModel, error) {
+	query := `SELECT * FROM public.users WHERE email = $1`
+
+	user := &models.UserModel{}
+	err := r.database.QueryRow(query, email).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Password,
+		&user.FirstName,
+		&user.LastName,
+		&user.BirthDate,
+		&user.Role,
+		&user.Verified,
+		&user.About,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+	}
+
+	return user, nil
 }
 
 var (
