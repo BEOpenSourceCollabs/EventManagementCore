@@ -11,9 +11,9 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/middleware"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/routes"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/service"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/persist"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 )
 
 func main() {
