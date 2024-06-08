@@ -34,8 +34,9 @@ func NewEnvironmentConfiguration() Configuration {
 	}
 
 	return Configuration{
-		Port: port,
-		Env:  ValidateEnv(GoEnv(env)),
+		Port:   port,
+		Env:    ValidateEnv(GoEnv(env)),
+		Secret: secret,
 		Database: persist.DatabaseConfiguration{
 			Host:     os.Getenv("DATABASE_HOST"),
 			Port:     os.Getenv("DATABASE_PORT"),
