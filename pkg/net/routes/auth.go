@@ -9,8 +9,8 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/service"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/utils"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -39,7 +39,12 @@ func (authRouter *authRoutes) HandleLogin(w http.ResponseWriter, r *http.Request
 	loginDto := &dtos.Login{}
 
 	//read json into loginDto
-	utils.ReadJson(w, r, loginDto)
+	err := utils.ReadJson(w, r, loginDto)
+
+	if err != nil {
+		utils.HandleCommonJsonError(err, w)
+		return
+	}
 
 	//validate login
 	data, err := authRouter.authService.ValidateSignIn(loginDto)
@@ -58,7 +63,6 @@ func (authRouter *authRoutes) HandleLogin(w http.ResponseWriter, r *http.Request
 
 	//return access token
 	utils.WriteSuccessJsonResponse(w, http.StatusOK, data)
-
 }
 
 // handles user sign up
@@ -67,10 +71,15 @@ func (authRouter *authRoutes) HandleSignUp(w http.ResponseWriter, r *http.Reques
 	registerDto := &dtos.Register{}
 
 	//read json into registerDto
-	utils.ReadJson(w, r, registerDto)
+	err := utils.ReadJson(w, r, registerDto)
+
+	if err != nil {
+		utils.HandleCommonJsonError(err, w)
+		return
+	}
 
 	//custom validation
-	err := utils.Validator.Struct(registerDto)
+	err = utils.Validator.Struct(registerDto)
 
 	if err != nil {
 		var validationErrors = []utils.ValidationErrorResponse{}
