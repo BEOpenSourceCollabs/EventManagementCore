@@ -1,6 +1,7 @@
 package service
 
 import (
+	"database/sql"
 	"errors"
 	"log"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 )
 
 var (
@@ -36,27 +38,38 @@ func (svc *AuthService) ValidateSignIn(dto *dtos.Login) (*dtos.LoginSuccess, err
 
 	//if not return invalid credentials error.
 	if err != nil {
+		svc.logger.Printf("%v", err)
 		svc.logger.Printf("user with email %s not found in db", dto.Email)
 		return nil, ErrInvalidCredentials
 	}
 
 	// check if provided password and password from db match
-	//TODO: use hashed passwords for now checking plain text passwords.
-	if existingUser.Password != dto.Password {
+	if !utils.DoesPasswordMatch(dto.Password, existingUser.Password) {
 		svc.logger.Printf("password didn't match for user with email %s", dto.Email)
 		return nil, ErrInvalidCredentials
 	}
 
-	//TODO: create a proper JWT token
+	jwtPayload := &dtos.JwtPayload{
+		Id:   existingUser.ID,
+		Role: existingUser.Role,
+	}
+
+	token, err := utils.GenerateToken(jwtPayload, svc.config.Secret)
+
+	if err != nil {
+		svc.logger.Printf("%v", err)
+		return nil, err
+	}
+
 	return &dtos.LoginSuccess{
 		User: dtos.LoginUser{
 			ID:        existingUser.ID,
 			Username:  existingUser.Username,
-			FirstName: existingUser.FirstName,
-			LastName:  existingUser.LastName,
+			FirstName: existingUser.FirstName.String,
+			LastName:  existingUser.LastName.String,
 			Role:      existingUser.Role,
 		},
-		AccessToken: "token",
+		AccessToken: token,
 	}, nil
 }
 
@@ -69,15 +82,21 @@ func (svc *AuthService) ValidateSignUp(dto *dtos.Register) (string, error) {
 		return "", ErrUserAlreadyExists
 	}
 
+	hashedPw, err := utils.HashPassword(dto.Password)
+
+	if err != nil {
+		return "", err
+	}
+
 	model := &models.UserModel{
 		Email:     dto.Email,
-		Password:  dto.Password,
-		FirstName: dto.FirstName,
-		LastName:  dto.LastName,
+		Password:  hashedPw,
+		FirstName: sql.NullString{String: dto.FirstName, Valid: true},
+		LastName:  sql.NullString{String: dto.LastName, Valid: true},
 		Username:  dto.Username,
 	}
 
-	err := svc.userRepo.InsertUser(model)
+	err = svc.userRepo.InsertUser(model)
 
 	if err != nil {
 		return "", err
