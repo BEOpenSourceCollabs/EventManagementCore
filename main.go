@@ -6,7 +6,9 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/middleware"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/routes"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/persist"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
 )
 
 func main() {
@@ -15,8 +17,8 @@ func main() {
 	// Create a static handler to serve contents of 'static' folder.
 	fs := http.FileServer(http.Dir("./static"))
 
-	/* todo: database */
-	_, err := persist.NewDatabase(envConfig.Database)
+	// initialize database from environment configuration
+	database, err := persist.NewDatabase(envConfig.Database)
 	if err != nil {
 		panic(err)
 	}
@@ -33,6 +35,14 @@ func main() {
 			w.Write([]byte("Ok"))
 		},
 	), middleware.WideOpen)) // Use the WideOpen CORS options to allow unrestricted access
+
+	// initialize and mount routes
+	routes.NewUserRoutes(
+		router,
+		repository.NewSQLUserRepository(
+			database,
+		),
+	)
 
 	// Start the HTTP server on port 8081 using the router
 	http.ListenAndServe(":8081", router)
