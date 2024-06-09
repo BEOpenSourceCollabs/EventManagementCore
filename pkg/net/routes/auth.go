@@ -3,7 +3,6 @@ package routes
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
@@ -18,15 +17,13 @@ import (
 
 type authRoutes struct {
 	config      *config.Configuration
-	logger      *log.Logger
-	authService *service.AuthService
+	authService service.IAuthService
 }
 
-func NewAuthRoutes(router net.AppRouter, authService *service.AuthService, logger *log.Logger, config *config.Configuration) *authRoutes {
+func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, config *config.Configuration) *authRoutes {
 
 	routes := &authRoutes{
 		authService: authService,
-		logger:      logger,
 		config:      config,
 	}
 
@@ -46,7 +43,7 @@ func (authRouter *authRoutes) HandleLogin(w http.ResponseWriter, r *http.Request
 	err := utils.ReadJson(w, r, loginDto)
 
 	if err != nil {
-		utils.HandleCommonJsonError(err, w)
+		utils.WriteRequestPayloadError(err, w)
 		return
 	}
 
@@ -78,7 +75,7 @@ func (authRouter *authRoutes) HandleSignUp(w http.ResponseWriter, r *http.Reques
 	err := utils.ReadJson(w, r, registerDto)
 
 	if err != nil {
-		utils.HandleCommonJsonError(err, w)
+		utils.WriteRequestPayloadError(err, w)
 		return
 	}
 

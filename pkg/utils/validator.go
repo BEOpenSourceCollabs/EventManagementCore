@@ -38,7 +38,7 @@ func HumanFriendlyErrorMessage(tag string, param string) string {
 	case "is-strong":
 		return "value must contain letters and numbers"
 	default:
-		return "none"
+		return ""
 	}
 }
 

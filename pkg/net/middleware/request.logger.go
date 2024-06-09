@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 )
 
 type statusRecorder struct {
@@ -20,7 +21,7 @@ func NewStatusRecorder(w http.ResponseWriter) *statusRecorder {
 	return &statusRecorder{w, http.StatusOK}
 }
 
-func RequestLoggerMiddleware(next http.Handler, logger *log.Logger) http.Handler {
+func RequestLoggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -31,6 +32,6 @@ func RequestLoggerMiddleware(next http.Handler, logger *log.Logger) http.Handler
 
 		end := time.Since(start)
 
-		logger.Printf("Path: %s | Status: %d | Time: %v", r.URL.Path, sr.statusCode, end)
+		logger.AppLogger.InfoF("RequestLoggerMiddleware", "Path: %s | Status: %d | Time: %v", r.URL.Path, sr.statusCode, end)
 	})
 }

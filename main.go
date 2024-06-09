@@ -2,12 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/middleware"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/routes"
@@ -19,15 +18,13 @@ import (
 func main() {
 	envConfig := config.NewEnvironmentConfiguration()
 
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-
 	// Create a static handler to serve contents of 'static' folder.
 	fs := http.FileServer(http.Dir("./static"))
 
 	// initialize database from environment configuration
 	database, err := persist.NewDatabase(envConfig.Database)
 	if err != nil {
-		logger.Fatal(err)
+		logger.AppLogger.Fatal("main", err)
 	}
 
 	// Create a new instance of the appRouter
@@ -53,29 +50,28 @@ func main() {
 		userRepo,
 	)
 
-	authService := service.NewAuthService(&envConfig, logger, userRepo)
+	authService := service.NewAuthService(&envConfig, userRepo)
 
 	routes.NewAuthRoutes(
 		router,
 		authService,
-		logger,
 		&envConfig,
 	)
 
 	// http server configured with some defaults
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", envConfig.Port),
-		Handler:      middleware.RequestLoggerMiddleware(router, logger),
+		Handler:      middleware.RequestLoggerMiddleware(router),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
 
-	logger.Printf("Starting server in %s mode on %s", envConfig.Env, srv.Addr)
+	logger.AppLogger.InfoF("main", "Starting server in %s mode on %s", envConfig.Env, srv.Addr)
 
 	// Start the HTTP server using the router
 	err = srv.ListenAndServe()
 
-	logger.Fatal(err)
+	logger.AppLogger.Fatal("main", err)
 
 }

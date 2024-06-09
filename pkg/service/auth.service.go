@@ -3,9 +3,9 @@ package service
 import (
 	"database/sql"
 	"errors"
-	"log"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
@@ -18,16 +18,20 @@ var (
 	ErrUserNotFound       = errors.New("user not found")
 )
 
+type IAuthService interface {
+	ValidateSignIn(dto *dtos.Login) (*dtos.LoginSuccess, error)
+	ValidateSignUp(dto *dtos.Register) (string, error)
+	CheckUser(id string) (*dtos.LoginUser, error)
+}
+
 type AuthService struct {
 	config   *config.Configuration
-	logger   *log.Logger
 	userRepo repository.UserRepository
 }
 
-func NewAuthService(config *config.Configuration, logger *log.Logger, userRepo repository.UserRepository) *AuthService {
+func NewAuthService(config *config.Configuration, userRepo repository.UserRepository) IAuthService {
 	return &AuthService{
 		config:   config,
-		logger:   logger,
 		userRepo: userRepo,
 	}
 }
@@ -39,14 +43,13 @@ func (svc *AuthService) ValidateSignIn(dto *dtos.Login) (*dtos.LoginSuccess, err
 
 	//if not return invalid credentials error.
 	if err != nil {
-		svc.logger.Printf("%v", err)
-		svc.logger.Printf("user with email %s not found in db", dto.Email)
+		logger.AppLogger.ErrorF("AuthService.ValidateSignIn", "user with email %s not found in db", dto.Email)
 		return nil, ErrInvalidCredentials
 	}
 
 	// check if provided password and password from db match
 	if !utils.DoesPasswordMatch(dto.Password, existingUser.Password) {
-		svc.logger.Printf("password didn't match for user with email %s", dto.Email)
+		logger.AppLogger.ErrorF("AuthService.ValidateSignIn", "password didn't match for user with email %s", dto.Email)
 		return nil, ErrInvalidCredentials
 	}
 
@@ -58,7 +61,7 @@ func (svc *AuthService) ValidateSignIn(dto *dtos.Login) (*dtos.LoginSuccess, err
 	token, err := utils.GenerateToken(jwtPayload, svc.config.Secret)
 
 	if err != nil {
-		svc.logger.Printf("%v", err)
+		logger.AppLogger.ErrorF("AuthService.ValidateSignIn", "%v", err)
 		return nil, err
 	}
 
@@ -86,6 +89,7 @@ func (svc *AuthService) ValidateSignUp(dto *dtos.Register) (string, error) {
 	hashedPw, err := utils.HashPassword(dto.Password)
 
 	if err != nil {
+		logger.AppLogger.ErrorF("AuthService.ValidateSignUp", "%v", err)
 		return "", err
 	}
 
@@ -100,6 +104,7 @@ func (svc *AuthService) ValidateSignUp(dto *dtos.Register) (string, error) {
 	err = svc.userRepo.InsertUser(model)
 
 	if err != nil {
+		logger.AppLogger.ErrorF("AuthService.ValidateSignUp", "%v", err)
 		return "", err
 	}
 
