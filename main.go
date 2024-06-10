@@ -1,14 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/middleware"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/routes"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/persist"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 )
 
 func main() {
@@ -20,7 +24,7 @@ func main() {
 	// initialize database from environment configuration
 	database, err := persist.NewDatabase(envConfig.Database)
 	if err != nil {
-		panic(err)
+		logger.AppLogger.Fatal("main", err)
 	}
 
 	// Create a new instance of the appRouter
@@ -30,20 +34,44 @@ func main() {
 	router.Get("/", fs)
 
 	// Register a GET route for the root URL ("/") with CORS middleware
-	router.Get("/health", middleware.CorsMiddleware(http.HandlerFunc(
+	router.Get("/api/health", middleware.CorsMiddleware(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Ok"))
 		},
 	), middleware.WideOpen)) // Use the WideOpen CORS options to allow unrestricted access
 
+	userRepo := repository.NewSQLUserRepository(
+		database,
+	)
+
 	// initialize and mount routes
 	routes.NewUserRoutes(
 		router,
-		repository.NewSQLUserRepository(
-			database,
-		),
+		userRepo,
 	)
 
-	// Start the HTTP server on port 8081 using the router
-	http.ListenAndServe(":8081", router)
+	authService := service.NewAuthService(&envConfig, userRepo)
+
+	routes.NewAuthRoutes(
+		router,
+		authService,
+		&envConfig,
+	)
+
+	// http server configured with some defaults
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", envConfig.Port),
+		Handler:      middleware.RequestLoggerMiddleware(router),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+
+	logger.AppLogger.InfoF("main", "Starting server in %s mode on %s", envConfig.Env, srv.Addr)
+
+	// Start the HTTP server using the router
+	err = srv.ListenAndServe()
+
+	logger.AppLogger.Fatal("main", err)
+
 }

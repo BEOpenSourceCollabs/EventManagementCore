@@ -15,6 +15,8 @@ type UserRepository interface {
 	GetUserByID(id string) (*models.UserModel, error)
 	UpdateUser(user *models.UserModel) error
 	DeleteUser(id string) error
+	GetUserByEmail(email string) (*models.UserModel, error)
+	InsertUser(user *models.UserModel) error
 }
 
 type sqlUserRepository struct {
@@ -120,6 +122,69 @@ func (r *sqlUserRepository) DeleteUser(id string) error {
 			return err
 		}
 		return ErrUserNotFound
+	}
+
+	return nil
+}
+
+func (r *sqlUserRepository) GetUserByEmail(email string) (*models.UserModel, error) {
+	query := `SELECT * FROM public.users WHERE email = $1`
+
+	user := &models.UserModel{}
+	err := r.database.QueryRow(query, email).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Password,
+		&user.FirstName,
+		&user.LastName,
+		&user.BirthDate,
+		&user.Role,
+		&user.Verified,
+		&user.About,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+	}
+
+	return user, nil
+}
+
+func (r *sqlUserRepository) InsertUser(user *models.UserModel) error {
+
+	//include required fields in columns first
+	insertQ := "INSERT INTO public.users (email, password, username"
+	valuesQ := "VALUES($1, $2, $3"
+	args := []interface{}{user.Email, user.Password, user.Username}
+	argsCounter := 3
+
+	if user.FirstName.String != "" {
+		argsCounter++
+		insertQ += ", first_name"
+		valuesQ += fmt.Sprintf(", $%d", argsCounter)
+		args = append(args, user.FirstName)
+	}
+
+	if user.LastName.String != "" {
+		argsCounter++
+		insertQ += ", last_name"
+		valuesQ += fmt.Sprintf(", $%d", argsCounter)
+		args = append(args, user.LastName)
+	}
+
+	insertQ += ") "
+	valuesQ += ") RETURNING id"
+
+	query := insertQ + valuesQ
+
+	err := r.database.QueryRow(query, args...).Scan(&user.ID)
+	if err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
 	}
 
 	return nil
