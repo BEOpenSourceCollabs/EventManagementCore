@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
@@ -24,12 +23,16 @@ type IAuthService interface {
 	CheckUser(id string) (*dtos.LoginUser, error)
 }
 
+type AuthServiceConfiguration struct {
+	Secret string
+}
+
 type AuthService struct {
-	config   *config.Configuration
+	config   *AuthServiceConfiguration
 	userRepo repository.UserRepository
 }
 
-func NewAuthService(config *config.Configuration, userRepo repository.UserRepository) IAuthService {
+func NewAuthService(config *AuthServiceConfiguration, userRepo repository.UserRepository) IAuthService {
 	return &AuthService{
 		config:   config,
 		userRepo: userRepo,

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
@@ -16,11 +15,11 @@ import (
 )
 
 type authRoutes struct {
-	config      *config.Configuration
+	config      *service.AuthServiceConfiguration
 	authService service.IAuthService
 }
 
-func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, config *config.Configuration) *authRoutes {
+func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, config *service.AuthServiceConfiguration) *authRoutes {
 
 	routes := &authRoutes{
 		authService: authService,
