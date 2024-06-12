@@ -38,12 +38,19 @@ func NewEnvironmentConfiguration() Configuration {
 		panic(errors.New("invalid environment configuration: SECRET is required"))
 	}
 
+	gClientId, ok := os.LookupEnv("GOOGLE_CLIENT_ID")
+
+	if !ok || gClientId == "" {
+		panic(errors.New("invalid environment configuration: GOOGLE_CLIENT_ID is required"))
+	}
+
 	return Configuration{
 		Port: port,
 		Env:  ValidateEnv(GoEnv(env)),
 		Security: SecurityConfiguration{
 			Authentication: service.AuthServiceConfiguration{
-				Secret: secret,
+				Secret:         secret,
+				GoogleClientId: gClientId,
 			},
 		},
 		Database: persist.DatabaseConfiguration{
