@@ -43,14 +43,27 @@ func (r *sqlUserRepository) CreateUser(user *models.UserModel) error {
 
 // GetUserByID retrieves a user from the database by its unique ID.
 func (r *sqlUserRepository) GetUserByID(id string) (*models.UserModel, error) {
-	query := `SELECT * FROM public.users WHERE id = $1`
+	query := `SELECT
+				id,
+				username,
+				email,
+				password,
+				first_name,
+				last_name,
+				birth_date,
+				role,
+				verified,
+				about,
+				created_at,
+				updated_at,
+				google_id,
+				avatar_url
+			  FROM public.users WHERE id = $1`
 
 	user := &models.UserModel{}
 	err := r.database.QueryRow(query, id).Scan(
 		&user.ID,
 		&user.Username,
-		&user.GoogleId,
-		&user.AvatarUrl,
 		&user.Email,
 		&user.Password,
 		&user.FirstName,
@@ -61,6 +74,8 @@ func (r *sqlUserRepository) GetUserByID(id string) (*models.UserModel, error) {
 		&user.About,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.GoogleId,
+		&user.AvatarUrl,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -130,14 +145,27 @@ func (r *sqlUserRepository) DeleteUser(id string) error {
 }
 
 func (r *sqlUserRepository) GetUserByEmail(email string) (*models.UserModel, error) {
-	query := `SELECT * FROM public.users WHERE email = $1`
+	query := `SELECT 
+				id,
+				username,
+				email,
+				password,
+				first_name,
+				last_name,
+				birth_date,
+				role,
+				verified,
+				about,
+				created_at,
+				updated_at,
+				google_id,
+				avatar_url 
+			FROM public.users WHERE email = $1`
 
 	user := &models.UserModel{}
 	err := r.database.QueryRow(query, email).Scan(
 		&user.ID,
 		&user.Username,
-		&user.GoogleId,
-		&user.AvatarUrl,
 		&user.Email,
 		&user.Password,
 		&user.FirstName,
@@ -148,6 +176,8 @@ func (r *sqlUserRepository) GetUserByEmail(email string) (*models.UserModel, err
 		&user.About,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.GoogleId,
+		&user.AvatarUrl,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -196,11 +226,11 @@ func (r *sqlUserRepository) InsertUser(user *models.UserModel) error {
 	}
 
 	insertQ += ") "
-	valuesQ += ") RETURNING id"
+	valuesQ += ") RETURNING id,role"
 
 	query := insertQ + valuesQ
 
-	err := r.database.QueryRow(query, args...).Scan(&user.ID)
+	err := r.database.QueryRow(query, args...).Scan(&user.ID, &user.Role)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
