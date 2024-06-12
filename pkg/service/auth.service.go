@@ -9,22 +9,27 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils/google"
 )
 
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserAlreadyExists  = errors.New("user already exists with given email")
 	ErrUserNotFound       = errors.New("user not found")
+	ErrInvalidGoogleToken = errors.New("google id token is invalid")
 )
 
 type IAuthService interface {
 	ValidateSignIn(dto *dtos.Login) (*dtos.LoginSuccess, error)
 	ValidateSignUp(dto *dtos.Register) (string, error)
 	CheckUser(id string) (*dtos.LoginUser, error)
+	ValidateGoogleSignUp(dto *dtos.GoogleSignUpRequest) (*dtos.LoginSuccess, error)
+	ValidateGoogleSignIn(string) (*dtos.LoginSuccess, error)
 }
 
 type AuthServiceConfiguration struct {
-	Secret string
+	Secret         string
+	GoogleClientId string
 }
 
 type AuthService struct {
@@ -114,6 +119,7 @@ func (svc *AuthService) CheckUser(id string) (*dtos.LoginUser, error) {
 	existingUser, err := svc.userRepo.GetUserByID(id)
 
 	if err != nil {
+		logger.AppLogger.ErrorF("AuthService.CheckUser", "%v", err)
 		return nil, ErrUserNotFound
 	}
 
@@ -125,4 +131,127 @@ func (svc *AuthService) CheckUser(id string) (*dtos.LoginUser, error) {
 		Role:      existingUser.Role,
 	}, nil
 
+}
+
+// validates google ID token and logs in google user
+func (svc *AuthService) ValidateGoogleSignIn(idToken string) (*dtos.LoginSuccess, error) {
+
+	payload, err := google.NewValidator().ValidateToken(idToken, svc.config.GoogleClientId)
+
+	if err != nil {
+		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignIn", "google id token validation failed - %v", err)
+		return nil, ErrInvalidGoogleToken
+	}
+
+	claims := payload.GetClaims()
+
+	logger.AppLogger.InfoF("AuthService.ValidateGoogleSignIn", "claims in token: id: %s, email: %s, email_verified: %v, picture: %v", claims.Id, claims.Email, claims.EmailVerified, claims.Picture)
+
+	existingUser, err := svc.userRepo.GetUserByEmail(claims.Email)
+
+	if err != nil {
+		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignIn", "%v", err)
+		return nil, ErrUserNotFound
+	}
+
+	if existingUser.GoogleId.String != claims.Id {
+		return nil, ErrUserNotFound
+	}
+
+	logger.AppLogger.InfoF("AuthService.ValidateGoogleSignIn", "successfully verified google user %s", claims.Email)
+
+	jwtPayload := &dtos.JwtPayload{
+		Id:   existingUser.ID,
+		Role: existingUser.Role,
+	}
+
+	token, err := utils.GenerateToken(jwtPayload, svc.config.Secret)
+
+	if err != nil {
+		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignIn", "%v", err)
+		return nil, err
+	}
+
+	return &dtos.LoginSuccess{
+		User: dtos.LoginUser{
+			ID:        existingUser.ID,
+			Username:  existingUser.Username,
+			FirstName: existingUser.FirstName.String,
+			LastName:  existingUser.LastName.String,
+			Role:      existingUser.Role,
+		},
+		AccessToken: token,
+	}, nil
+}
+
+// validates google ID token and registeres google user
+func (svc *AuthService) ValidateGoogleSignUp(dto *dtos.GoogleSignUpRequest) (*dtos.LoginSuccess, error) {
+
+	payload, err := google.NewValidator().ValidateToken(dto.IdToken, svc.config.GoogleClientId)
+
+	if err != nil {
+		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignUp", "google id token validation failed - %v", err)
+		return nil, ErrInvalidGoogleToken
+	}
+
+	claims := payload.GetClaims()
+
+	logger.AppLogger.InfoF("AuthService.ValidateGoogleSignUp", "claims in token: id: %s, email: %s, email_verified: %v, picture: %v", claims.Id, claims.Email, claims.EmailVerified, claims.Picture)
+
+	existingUser, _ := svc.userRepo.GetUserByEmail(claims.Email)
+
+	if existingUser != nil {
+		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignUp", "user exists with provided google email- %s", claims.Email)
+		return nil, ErrUserAlreadyExists
+	}
+
+	var fname, lname string
+
+	if dto.FirstName == "" {
+		fname = claims.FirstName
+	}
+
+	if dto.LastName == "" {
+		lname = claims.LastName
+	}
+
+	model := &models.UserModel{
+		Email:     claims.Email,
+		Password:  "",
+		FirstName: sql.NullString{String: fname, Valid: true},
+		LastName:  sql.NullString{String: lname, Valid: true},
+		Username:  dto.Username,
+		GoogleId:  sql.NullString{String: claims.Id, Valid: true},
+		AvatarUrl: sql.NullString{String: claims.Picture, Valid: true},
+	}
+
+	err = svc.userRepo.InsertUser(model)
+
+	if err != nil {
+		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignUp", "unable to insert user - %v", err)
+		return nil, err
+	}
+
+	jwtPayload := &dtos.JwtPayload{
+		Id:   model.ID,
+		Role: model.Role,
+	}
+
+	token, err := utils.GenerateToken(jwtPayload, svc.config.Secret)
+
+	if err != nil {
+		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignUp", "%v", err)
+		return nil, err
+	}
+
+	return &dtos.LoginSuccess{
+		User: dtos.LoginUser{
+			ID:        model.ID,
+			Username:  model.Username,
+			FirstName: model.FirstName.String,
+			LastName:  model.LastName.String,
+			Role:      model.Role,
+		},
+		AccessToken: token,
+	}, nil
 }
