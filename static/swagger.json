@@ -10,7 +10,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:8081/api"
+      "url": "http://localhost:8081/"
     }
   ],
   "tags": [
@@ -625,10 +625,171 @@
           }
         ]
       }
+    },
+    "/auth/google/signup": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "sign up using google account",
+        "operationId": "google-signup",
+        "requestBody": {
+          "description": "google sign up payload",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleSignUpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successfully signed up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad sign up request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "google id token invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginFail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error most likely due to service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/google/signin": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "sign in using google account",
+        "operationId": "google-signin",
+        "requestBody": {
+          "description": "google oauth id-token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleSignInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully logged in using google.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad sign up request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "google id token invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginFail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error most likely due to service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "GoogleSignInRequest": {
+        "required": [
+          "id_token"
+        ],
+        "type": "object",
+        "properties": {
+          "id_token": {
+            "type": "string",
+            "example": "UzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmF"
+          }
+        }
+      },
+      "GoogleSignUpRequest": {
+        "required": [
+          "username",
+          "id_token"
+        ],
+        "type": "object",
+        "properties": {
+          "id_token": {
+            "type": "string",
+            "example": "UzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmF"
+          },
+          "username": {
+            "type": "string",
+            "example": "john_doe"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "john"
+          },
+          "last_name": {
+            "type": "string",
+            "example": "doe"
+          }
+        }
+      },
       "UserInfo": {
         "type": "object",
         "properties": {
