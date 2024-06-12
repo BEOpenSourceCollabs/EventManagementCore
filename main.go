@@ -48,6 +48,7 @@ func main() {
 	routes.NewUserRoutes(
 		router,
 		userRepo,
+		&envConfig.Security.Authentication,
 	)
 
 	authService := service.NewAuthService(&envConfig.Security.Authentication, userRepo)

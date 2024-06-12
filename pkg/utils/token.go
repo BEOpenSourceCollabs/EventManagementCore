@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -40,7 +41,7 @@ func ValidateToken(tokenString, secret string) (*dtos.JwtPayload, error) {
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		payload := &dtos.JwtPayload{
 			Id:   claims["sub"].(string),
-			Role: claims["role"].(string),
+			Role: constants.Role(claims["role"].(string)),
 		}
 		return payload, nil
 	}
