@@ -6,14 +6,19 @@ import (
 	"strconv"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/persist"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 )
 
 // Configuration .
 type Configuration struct {
-	Secret   string
 	Env      GoEnv
 	Port     int
+	Security SecurityConfiguration
 	Database persist.DatabaseConfiguration
+}
+
+type SecurityConfiguration struct {
+	Authentication service.AuthServiceConfiguration
 }
 
 // NewEnvironmentConfiguration creates a configuration populated from os environment variables.
@@ -34,9 +39,13 @@ func NewEnvironmentConfiguration() Configuration {
 	}
 
 	return Configuration{
-		Port:   port,
-		Env:    ValidateEnv(GoEnv(env)),
-		Secret: secret,
+		Port: port,
+		Env:  ValidateEnv(GoEnv(env)),
+		Security: SecurityConfiguration{
+			Authentication: service.AuthServiceConfiguration{
+				Secret: secret,
+			},
+		},
 		Database: persist.DatabaseConfiguration{
 			Host:     os.Getenv("DATABASE_HOST"),
 			Port:     os.Getenv("DATABASE_PORT"),
