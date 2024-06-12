@@ -8,6 +8,8 @@ import (
 // UserModel represents the user data stored in the database.
 type UserModel struct {
 	ID        string         `db:"id"`
+	GoogleId  sql.NullString `db:"google_id" json:"-"`
+	AvatarUrl sql.NullString `db:"avatar_url"`
 	Username  string         `db:"username"`
 	Email     string         `db:"email"`
 	Password  string         `db:"password" json:"-"`

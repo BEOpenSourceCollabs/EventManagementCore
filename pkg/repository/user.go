@@ -49,6 +49,8 @@ func (r *sqlUserRepository) GetUserByID(id string) (*models.UserModel, error) {
 	err := r.database.QueryRow(query, id).Scan(
 		&user.ID,
 		&user.Username,
+		&user.GoogleId,
+		&user.AvatarUrl,
 		&user.Email,
 		&user.Password,
 		&user.FirstName,
@@ -134,6 +136,8 @@ func (r *sqlUserRepository) GetUserByEmail(email string) (*models.UserModel, err
 	err := r.database.QueryRow(query, email).Scan(
 		&user.ID,
 		&user.Username,
+		&user.GoogleId,
+		&user.AvatarUrl,
 		&user.Email,
 		&user.Password,
 		&user.FirstName,
@@ -175,6 +179,20 @@ func (r *sqlUserRepository) InsertUser(user *models.UserModel) error {
 		insertQ += ", last_name"
 		valuesQ += fmt.Sprintf(", $%d", argsCounter)
 		args = append(args, user.LastName)
+	}
+
+	if user.GoogleId.String != "" {
+		argsCounter++
+		insertQ += ", google_id"
+		valuesQ += fmt.Sprintf(", $%d", argsCounter)
+		args = append(args, user.GoogleId)
+	}
+
+	if user.AvatarUrl.String != "" {
+		argsCounter++
+		insertQ += ", avatar_url"
+		valuesQ += fmt.Sprintf(", $%d", argsCounter)
+		args = append(args, user.AvatarUrl)
 	}
 
 	insertQ += ") "

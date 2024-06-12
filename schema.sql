@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS public.users (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   username VARCHAR(20) NOT NULL UNIQUE,
   email VARCHAR(256) NOT NULL UNIQUE,
+  google_id text,
+  avatar_url text,
   password TEXT NOT NULL,
   first_name VARCHAR(50),
   last_name VARCHAR(50),
