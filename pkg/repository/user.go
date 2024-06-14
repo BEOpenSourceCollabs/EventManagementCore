@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
 )
@@ -30,6 +29,8 @@ func NewSQLUserRepository(database *sql.DB) UserRepository {
 
 // CreateUser inserts a new user into the database.
 func (r *sqlUserRepository) CreateUser(user *models.UserModel) error {
+	user.BeforeCreate()
+
 	query := `INSERT INTO public.users (username, email, password, first_name, last_name, birth_date, role, verified, about)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
 
@@ -37,6 +38,8 @@ func (r *sqlUserRepository) CreateUser(user *models.UserModel) error {
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
+
+	user.AfterCreate()
 
 	return nil
 }
@@ -72,6 +75,7 @@ func (r *sqlUserRepository) GetUserByID(id string) (*models.UserModel, error) {
 
 // UpdateUser update a user in the database.
 func (r *sqlUserRepository) UpdateUser(user *models.UserModel) error {
+	user.BeforeUpdate()
 	query := `UPDATE public.users SET username = $1, email = $2, password = $3, first_name = $4, last_name = $5, birth_date = $6, role = $7, verified = $8, about = $9, updated_at = $10 WHERE id = $11`
 
 	// This is a guard to prevent any partial user from being submitted.
@@ -91,7 +95,7 @@ func (r *sqlUserRepository) UpdateUser(user *models.UserModel) error {
 		user.Role,
 		user.Verified,
 		user.About,
-		time.Now(),
+		user.UpdatedAt, // now updated in model BeforeUpdate lifecycle hook
 		user.ID,
 	)
 	if err != nil {
@@ -104,6 +108,8 @@ func (r *sqlUserRepository) UpdateUser(user *models.UserModel) error {
 		}
 		return ErrUserNotFound
 	}
+
+	user.AfterUpdate()
 
 	return nil
 }
@@ -156,6 +162,7 @@ func (r *sqlUserRepository) GetUserByEmail(email string) (*models.UserModel, err
 }
 
 func (r *sqlUserRepository) InsertUser(user *models.UserModel) error {
+	user.BeforeCreate()
 
 	//include required fields in columns first
 	insertQ := "INSERT INTO public.users (email, password, username"
@@ -186,6 +193,8 @@ func (r *sqlUserRepository) InsertUser(user *models.UserModel) error {
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
+
+	user.AfterCreate()
 
 	return nil
 }

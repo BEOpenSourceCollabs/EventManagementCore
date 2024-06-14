@@ -20,15 +20,26 @@ type authRoutes struct {
 }
 
 func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, config *service.AuthServiceConfiguration) *authRoutes {
-
 	routes := &authRoutes{
 		authService: authService,
 		config:      config,
 	}
 
+	protectMiddleware := middleware.JWTBearerMiddleware{
+		Secret: config.Secret,
+	}
+
 	router.Post("/api/auth/login", http.HandlerFunc(routes.HandleLogin))
 	router.Post("/api/auth/register", http.HandlerFunc(routes.HandleSignUp))
-	router.Get("/api/auth/check", middleware.ProtectMiddleware(http.HandlerFunc(routes.HandleCheck), config.Secret))
+	router.Get("/api/auth/check", protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleCheck)))
+
+	// Add basic preflight handlers
+	router.Options("/api/auth/login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	router.Options("/api/auth/register", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
 
 	return routes
 }

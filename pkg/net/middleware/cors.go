@@ -25,14 +25,30 @@ var WideOpen = CorsOptions{
 	AllowCredentials: true,                                                                                     // Allow credentials to be included
 }
 
-// CorsMiddleware is an HTTP middleware function that adds CORS headers to the response
-func CorsMiddleware(next http.Handler, options CorsOptions) http.Handler {
+type CorsMiddleware struct {
+	Options CorsOptions
+}
+
+func (cmw CorsMiddleware) BeforeNext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", options.Origin)
-		w.Header().Set("Access-Control-Allow-Methods", strings.Join(options.Methods, ", "))
-		w.Header().Set("Access-Control-Allow-Headers", strings.Join(options.Headers, ", "))
-		w.Header().Set("Access-Control-Expose-Headers", fmt.Sprint(options.ExposeHeaders))
-		w.Header().Set("Access-Control-Allow-Credentials", fmt.Sprint(options.AllowCredentials))
+		w.Header().Set("Access-Control-Allow-Origin", cmw.Options.Origin)
+		w.Header().Set("Access-Control-Allow-Methods", strings.Join(cmw.Options.Methods, ", "))
+		w.Header().Set("Access-Control-Allow-Headers", strings.Join(cmw.Options.Headers, ", "))
+		w.Header().Set("Access-Control-Expose-Headers", fmt.Sprint(cmw.Options.ExposeHeaders))
+		w.Header().Set("Access-Control-Allow-Credentials", fmt.Sprint(cmw.Options.AllowCredentials))
 		next.ServeHTTP(w, r)
 	})
 }
+
+// CorsMiddleware is an HTTP middleware function that adds CORS headers to the response
+// func CorsMiddleware(next http.Handler, options CorsOptions) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		logger.AppLogger.InfoF("CorsMiddleware", "adding cors headers with options - %v", options)
+// 		w.Header().Set("Access-Control-Allow-Origin", options.Origin)
+// 		w.Header().Set("Access-Control-Allow-Methods", strings.Join(options.Methods, ", "))
+// 		w.Header().Set("Access-Control-Allow-Headers", strings.Join(options.Headers, ", "))
+// 		w.Header().Set("Access-Control-Expose-Headers", fmt.Sprint(options.ExposeHeaders))
+// 		w.Header().Set("Access-Control-Allow-Credentials", fmt.Sprint(options.AllowCredentials))
+// 		next.ServeHTTP(w, r)
+// 	})
+// }

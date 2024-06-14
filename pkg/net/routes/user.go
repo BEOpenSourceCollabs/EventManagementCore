@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 
@@ -17,48 +16,50 @@ import (
 )
 
 type userRoutes struct {
-	UserContextHelpers // include user context helpers
-	userRepository     repository.UserRepository
+	net.UserContextHelpers // include user context helpers
+	userRepository         repository.UserRepository
 }
 
 func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepository, authConfig *service.AuthServiceConfiguration) userRoutes {
 	routes := userRoutes{
 		/* inject dependencies */
 		userRepository: userRepository,
-		UserContextHelpers: UserContextHelpers{
+		UserContextHelpers: net.UserContextHelpers{
 			R: &userRepository,
 		},
+	}
+
+	// initialize a protect middleware (factory) to wrap and protect each of the routes.
+	protectMiddleware := middleware.JWTBearerMiddleware{
+		Secret: authConfig.Secret,
 	}
 
 	// mount routes to router.
 	router.Post(
 		"/api/users",
-		middleware.ProtectMiddleware(
-			http.HandlerFunc(routes.HandleCreateUser),
-			authConfig.Secret,
-		),
+		protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleCreateUser)),
 	)
 	router.Get(
 		"/api/users/{id}",
-		middleware.ProtectMiddleware(
-			http.HandlerFunc(routes.HandleGetUserById),
-			authConfig.Secret,
-		),
+		protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleGetUserById)),
 	)
 	router.Put(
 		"/api/users/{id}",
-		middleware.ProtectMiddleware(
-			http.HandlerFunc(routes.HandleUpdateUserById),
-			authConfig.Secret,
-		),
+		protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleUpdateUserById)),
 	)
 	router.Delete(
 		"/api/users/{id}",
-		middleware.ProtectMiddleware(
-			http.HandlerFunc(routes.HandleDeleteUserById),
-			authConfig.Secret,
-		),
+		protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleDeleteUserById)),
 	)
+
+	// Add basic preflight handlers
+	router.Options("/api/users", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	router.Options("/api/users/{id}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
 	return routes
 }
 
@@ -70,33 +71,15 @@ func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payload := &dtos.CreateUser{}
-	if err := json.NewDecoder(r.Body).Decode(payload); err != nil {
+	payload := dtos.CreateOrUpdateUser{}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
 		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	hash, _ := utils.HashPassword(payload.Password)
-
-	// TODO: validation
-	// No validation is done while creating a user as admin.
-	// To do so would involve including the authentication service as a dependency.
-	user := &models.UserModel{
-		Username: payload.Username,
-		Email:    payload.Email,
-		Password: hash,
-		FirstName: sql.NullString{
-			String: payload.FirstName,
-			Valid:  true,
-		},
-		LastName: sql.NullString{
-			String: payload.LastName,
-			Valid:  true,
-		},
-		Role:     payload.Role,
-		Verified: payload.Verified,
-	}
+	user := &models.UserModel{}
+	user.UpdateFrom(payload)
 
 	if err := u.userRepository.CreateUser(user); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
@@ -121,16 +104,11 @@ func (u userRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user": user,
-	})
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, user.ToDto())
 }
 
 func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request) {
@@ -154,8 +132,8 @@ func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Merge in the request payload
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	payload := dtos.CreateOrUpdateUser{}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -163,6 +141,9 @@ func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request)
 		})
 		return
 	}
+
+	// updates the user from the payload
+	user.UpdateFrom(payload)
 
 	// submit the changes
 	if err := u.userRepository.UpdateUser(user); err != nil {

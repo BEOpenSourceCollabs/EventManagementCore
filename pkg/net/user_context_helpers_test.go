@@ -1,4 +1,4 @@
-package routes_test
+package net_test
 
 import (
 	"context"
@@ -8,14 +8,14 @@ import (
 	"testing"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/routes"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/test/mock"
 )
 
-var userContextHelper routes.UserContextHelpers
+var userContextHelper net.UserContextHelpers
 
 func init() {
 	// Create a mock user repository, mocking only the required GetUserByID function.
@@ -25,7 +25,9 @@ func init() {
 			switch id {
 			case "user":
 				return &models.UserModel{
-					ID:        id,
+					Model: models.Model{
+						ID: id,
+					},
 					Username:  "test1",
 					Email:     "test1@domain.com",
 					FirstName: sql.NullString{String: "unit1", Valid: true},
@@ -34,7 +36,9 @@ func init() {
 				}, nil
 			case "admin":
 				return &models.UserModel{
-					ID:        id,
+					Model: models.Model{
+						ID: id,
+					},
 					Username:  "test2",
 					Email:     "test2@domain.com",
 					FirstName: sql.NullString{String: "unit2", Valid: true},
@@ -43,7 +47,9 @@ func init() {
 				}, nil
 			case "organizer":
 				return &models.UserModel{
-					ID:        id,
+					Model: models.Model{
+						ID: id,
+					},
 					Username:  "test3",
 					Email:     "test3@domain.com",
 					FirstName: sql.NullString{String: "unit3", Valid: true},
@@ -56,7 +62,7 @@ func init() {
 	}
 
 	// Initialize the user context helper with the mock user repository, that will be tested.
-	userContextHelper = routes.UserContextHelpers{
+	userContextHelper = net.UserContextHelpers{
 		&mockUserRepository,
 	}
 }
@@ -105,7 +111,7 @@ func TestUserContextHelpers_LoadUserFromContext(t *testing.T) {
 		if err == nil {
 			t.Errorf("expected error when attempting to call with no context")
 		}
-		if err != routes.ErrMissingUserContext {
+		if err != net.ErrMissingUserContext {
 			t.Errorf("error does not match the expected type ErrMissingUserContext")
 		}
 		if user != nil {
