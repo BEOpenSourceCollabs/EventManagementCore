@@ -26,7 +26,7 @@ func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepositor
 		/* inject dependencies */
 		userRepository: userRepository,
 		UserContextHelpers: UserContextHelpers{
-			r: &userRepository,
+			R: &userRepository,
 		},
 	}
 
