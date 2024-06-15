@@ -189,6 +189,37 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServerErrorResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "repository connection lost"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         "security": [
@@ -496,6 +527,103 @@
             "tokenAuth": []
           }
         ]
+      },
+      "delete": {
+        "tags": [
+          "user"
+        ],
+        "operationId": "HandleDeleteUserById",
+        "summary": "delete user by id",
+        "description": "**Requires authenticated user with the 'admin' role.**",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuidv4"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/RestAPIResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BadRequestResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/UnauthorizedResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "user is missing the required role 'admin'"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServerErrorResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "repository connection lost"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "tokenAuth": []
+          }
+        ]
       }
     }
   },
@@ -624,6 +752,26 @@
               "messages": {
                 "example": [
                   "invalid credentials"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "NotFoundErrorResponse": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorAPIResponse"
+          },
+          {
+            "properties": {
+              "code": {
+                "example": "NOT_FOUND"
+              },
+              "messages": {
+                "example": [
+                  "user with id 9dc2391b-595e-4a9a-aefb-75dbe18fe5ca does not exist"
                 ]
               }
             }
