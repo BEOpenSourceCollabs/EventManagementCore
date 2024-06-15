@@ -50,6 +50,16 @@ func main() {
 		userRepo,
 	)
 
+	eventRepo := repository.NewSQLEventRepository(
+		database,
+	)
+
+	// initialize and mount routes
+	routes.NewEventRoutes(
+		router,
+		eventRepo,
+	)
+
 	authService := service.NewAuthService(&envConfig.Security.Authentication, userRepo)
 
 	routes.NewAuthRoutes(

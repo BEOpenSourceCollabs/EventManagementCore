@@ -37,12 +37,12 @@
 			"response": []
 		},
 		{
-			"name": "http://localhost:8081/api/users/by-id/{{id}}",
+			"name": "http://localhost:8081/api/users/{{id}}",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8081/api/users/by-id/{{id}}",
+					"raw": "http://localhost:8081/api/users/{{id}}",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -119,6 +119,132 @@
 				}
 			},
 			"response": []
-		}
+		},
+		{
+			"name": "http://localhost:8081/api/events/create",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"Tech Meet\",\r\n  \"organizerid\": \"{{organizer-id}}\",\r\n  \"startdate\": \"2024-10-10T10:00:00Z\",\r\n  \"enddate\": \"2024-10-12T18:00:00Z\",\r\n  \"ispaid\": false,\r\n  \"eventtype\": \"online\",\r\n  \"slug\": \"tech-meet\"\r\n }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/events/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"events",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8081/api/events/{id}",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/api/events/{{event-id}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"events",
+						"{{event-id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8081/api/organizers/{organizer-id}/events",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/api/organizers/{{organizer-id}}/events",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"organizers",
+						"{{organizer-id}}",
+						"events"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8081/api/events/update/{event-id}",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"Health & Wellness Expo 2024\",\r\n  \"organizerid\": \"{{organizer-id}}\",\r\n  \"startdate\": \"2024-10-10T10:00:00Z\",\r\n  \"enddate\": \"2024-10-12T18:00:00Z\",\r\n  \"ispaid\": true,\r\n  \"eventtype\": \"offline\",\r\n  \"slug\": \"health-wellness-expo-2024\",\r\n  \"likes\": 34,\r\n  \"follows\": 45,\r\n  \"attendees\": 100\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/events/update/{{event-id}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"events",
+						"update",
+						"{{event-id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8081/api/events/delete/{event-id}",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/api/events/delete/{{event-id}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"events",
+						"delete",
+						"{{event-id}}"
+					]
+				}
+			},
+			"response": []
+		}								
 	]
 }
