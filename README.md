@@ -15,7 +15,7 @@ git clone https://github.com/BEOpenSourceCollabs/EventManagementCore
 cd EventManagementCore
 ```
 
-## Local database setup
+### Local database setup
 - You need [Docker](https://www.docker.com/products/docker-desktop/) installed and working.
 - Create a `db.env` file in project root with following variables
 
@@ -50,15 +50,15 @@ Next setup the application environment and add the database configuration.
   ```
   Ensure to update these to match your database configuration (these are set in `db.env` for development).
 
-## Run
+### Run
 
-```bash
+```shell
 make run
 ```
 
-## Run Tests
+### Run Tests
 
-```bash
+```shell
 make test
 
 # or 
@@ -66,7 +66,56 @@ make test
 make test.unit
 ```
 
-## documentation 
+## Development
+
+### Running the application for development
+
+Best practice for running the application is as follows.  
+After completing prerequisit steps to setup and configure the application the docker compose can be used to run the development environment.
+
+```shell
+docker compose watch
+```
+
+> Using `watch` will automatically be syncronized to the running container and restart the application when source is modified.
+
+### Advanced
+
+This section examples the usage of the `docker-dev.sh` script, which builds only the event-mgmt-core image and runs it in a container. You will have to setup and configure the database before running.
+
+  ```shell
+  ./docker-dev.sh
+  ```
+
+If you want to run the database from `docker-compose.yml` and use that you can do the following:
+
+  ```shell
+  # start only db
+  docker compose up db
+
+  # optionally you could start both the db and pgadmin
+  docker compose up db pgadmin
+  ```
+
+  Example: `.env`
+  
+  ```text
+  DATABASE_HOST=event-mgmt-postgres
+  DATABASE_USER=postgres
+  DATABASE_PASSWORD=postgres
+  DATABASE_NAME=event-mgmt-db
+  DATABASE_PORT=5432
+  DATABASE_SSL_MODE=disable
+  ```
+  > Note: the container name 'event-mgmt-postgres' can be used as the host.
+
+Then run the application.
+
+  ```shell
+  ./docker-dev.sh
+  ```
+
+## Documentation 
 
 Open API documentation with interactive client is available on route [http://localhost:8081/swagger](http://localhost:8081/swagger) and 
 the raw json schema can be downloaded on [http://localhost:8081/swagger.json](http://localhost:8081/swagger.json).
