@@ -23,33 +23,20 @@ func (h UserContextHelpers) LoadUserFromContext(r *http.Request) (*models.UserMo
 	if !ok {
 		return nil, ErrMissingUserContext
 	}
-
-	user, err := (*h.R).GetUserByID(userContext.Id)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
+	return (*h.R).GetUserByID(userContext.Id)
 }
 
 // LoadUserFromContextWithRole helper that attempts to read the http.Request's user context key or returns an error if it was not found.
 // Returns the loaded user if found and has the role specified in the parameters.
 // This helper can be used as a gaurd to protect routes being accessed by users without the specified role.
 func (h UserContextHelpers) LoadUserFromContextWithRole(r *http.Request, role constants.Role) (*models.UserModel, error) {
-	userContext, ok := r.Context().Value(constants.USER_CONTEXT_KEY).(*dtos.JwtPayload)
-	if !ok {
-		return nil, ErrMissingUserContext
-	}
-
-	user, err := (*h.R).GetUserByID(userContext.Id)
+	user, err := h.LoadUserFromContext(r)
 	if err != nil {
 		return nil, err
 	}
-
 	if user.Role != role {
 		return nil, fmt.Errorf("user is missing the required role '%v'", role)
 	}
-
 	return user, nil
 }
 

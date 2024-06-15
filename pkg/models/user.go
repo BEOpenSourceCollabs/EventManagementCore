@@ -13,15 +13,15 @@ import (
 // UserModel represents the user data stored in the database.
 type UserModel struct {
 	Model
-	Username  string         `db:"username"`
-	Email     string         `db:"email"`
+	Username  string         `db:"username" json:"username"`
+	Email     string         `db:"email" json:"email"`
 	Password  string         `db:"password" json:"-"`
-	FirstName sql.NullString `db:"first_name"`
-	LastName  sql.NullString `db:"last_name"`
-	BirthDate sql.NullTime   `db:"birth_date"`
-	Role      constants.Role `db:"role"`
-	Verified  bool           `db:"verified"`
-	About     sql.NullString `db:"about"`
+	FirstName sql.NullString `db:"first_name" json:"first_name"`
+	LastName  sql.NullString `db:"last_name" json:"last_name"`
+	BirthDate sql.NullTime   `db:"birth_date" json:"birth_date"`
+	Role      constants.Role `db:"role" json:"role"`
+	Verified  bool           `db:"verified" json:"verified"`
+	About     sql.NullString `db:"about" json:"about"`
 }
 
 // BeforeCreate overrides model lifecycle hook, hashes the users password before proceeding.
@@ -40,16 +40,6 @@ func (m *UserModel) BeforeUpdated() error {
 	logger.AppLogger.InfoF("UserModel", "overridden lifecycle BeforeUpdated() - updating updated_at")
 	m.UpdatedAt = time.Now()
 	return nil
-}
-
-func (m *UserModel) ToDto() dtos.LoginUser {
-	return dtos.LoginUser{
-		ID:        m.ID,
-		FirstName: m.FirstName.String,
-		LastName:  m.LastName.String,
-		Username:  m.Username,
-		Role:      m.Role,
-	}
 }
 
 func (m *UserModel) UpdateFrom(payload dtos.CreateOrUpdateUser) {

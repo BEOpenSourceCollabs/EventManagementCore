@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net"
+	"reflect"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
 )
@@ -67,7 +69,10 @@ func (r *sqlUserRepository) GetUserByID(id string) (*models.UserModel, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}
-		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+		if reflect.TypeOf(err) == reflect.TypeOf(&net.OpError{}) {
+			return nil, ErrRepoConnErr
+		}
+		return nil, ErrInvalidId
 	}
 
 	return user, nil
@@ -200,5 +205,7 @@ func (r *sqlUserRepository) InsertUser(user *models.UserModel) error {
 }
 
 var (
-	ErrUserNotFound = errors.New("user not found") // ErrUserNotFound is returned when a user is not found in the database.
+	ErrUserNotFound = errors.New("user not found")  // ErrUserNotFound is returned when a user is not found in the database.
+	ErrInvalidId    = errors.New("invalid user id") // ErrUserNotFound is returned when a user id is invalid or malformed.
+	ErrRepoConnErr  = errors.New("repository connection lost")
 )

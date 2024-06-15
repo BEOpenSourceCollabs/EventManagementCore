@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
@@ -67,14 +68,18 @@ func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, err.Error())
+		if errors.Is(err, repository.ErrRepoConnErr) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
+		} else {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, []string{err.Error()})
+		}
 		return
 	}
 
 	payload := dtos.CreateOrUpdateUser{}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, err.Error())
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, []string{err.Error()})
 		return
 	}
 
@@ -83,39 +88,50 @@ func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	if err := u.userRepository.CreateUser(user); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, err.Error())
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
-	utils.WriteSuccessJsonResponse(w, http.StatusOK, "user created")
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, user)
 }
 
 func (u userRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, err.Error())
+		if errors.Is(err, repository.ErrRepoConnErr) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
+		} else {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, []string{err.Error()})
+		}
 		return
 	}
 
 	id := r.PathValue("id")
 
 	user, err := u.userRepository.GetUserByID(id)
-
 	if err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, err.Error())
+		if errors.Is(err, repository.ErrUserNotFound) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
+			return
+		}
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, []string{err.Error()})
 		return
 	}
 
-	utils.WriteSuccessJsonResponse(w, http.StatusOK, user.ToDto())
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, user)
 }
 
 func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, err.Error())
+		if errors.Is(err, repository.ErrRepoConnErr) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
+		} else {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, []string{err.Error()})
+		}
 		return
 	}
 
@@ -125,20 +141,17 @@ func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request)
 	user, err := u.userRepository.GetUserByID(id)
 	if err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
+		if errors.Is(err, repository.ErrUserNotFound) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
+			return
+		}
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
 	payload := dtos.CreateOrUpdateUser{}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
+	if err := utils.ReadJson(w, r, &payload); err != nil {
+		utils.WriteRequestPayloadError(err, w)
 		return
 	}
 
@@ -148,23 +161,26 @@ func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request)
 	// submit the changes
 	if err := u.userRepository.UpdateUser(user); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
+		if errors.Is(err, repository.ErrUserNotFound) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
+			return
+		}
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user": user,
-	})
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, user)
 }
 
 func (u userRoutes) HandleDeleteUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, err.Error())
+		if errors.Is(err, repository.ErrRepoConnErr) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
+		} else {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, []string{err.Error()})
+		}
 		return
 	}
 
@@ -172,14 +188,13 @@ func (u userRoutes) HandleDeleteUserById(w http.ResponseWriter, r *http.Request)
 
 	if err := u.userRepository.DeleteUser(id); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
+		if errors.Is(err, repository.ErrUserNotFound) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
+			return
+		}
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-	})
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, nil)
 }

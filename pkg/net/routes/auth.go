@@ -40,6 +40,9 @@ func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, confi
 	router.Options("/api/auth/register", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
+	router.Options("/api/auth/check", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
 
 	return routes
 }

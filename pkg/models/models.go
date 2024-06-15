@@ -12,16 +12,16 @@ type ModelLifecycles interface {
 	AfterCreate() error
 	BeforeUpdate() error
 	AfterUpdate() error
-	// BeforeDelete() // additional - not needed yet
-	// AfterDelete() // additional - not needed yet
+	BeforeDelete() error
+	AfterDelete() error
 }
 
 // Model provides default fields and lifecycle functions to models.
 type Model struct {
-	ModelLifecycles
-	ID        string    `db:"id"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	ModelLifecycles `json:"-"`
+	ID              string    `db:"id" json:"id"`
+	CreatedAt       time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt       time.Time `db:"updated_at" json:"updated_at"`
 }
 
 func (m *Model) BeforeCreate() error {
@@ -41,5 +41,15 @@ func (m *Model) BeforeUpdate() error {
 
 func (m *Model) AfterUpdate() error {
 	logger.AppLogger.InfoF("Model lifecycle", "unoverridden lifecycle AfterUpdate()")
+	return nil
+}
+
+func (m *Model) BeforeDelete() error {
+	logger.AppLogger.InfoF("Model lifecycle", "unoverridden lifecycle BeforeDelete()")
+	return nil
+}
+
+func (m *Model) AfterDelete() error {
+	logger.AppLogger.InfoF("Model lifecycle", "unoverridden lifecycle AfterDelete()")
 	return nil
 }

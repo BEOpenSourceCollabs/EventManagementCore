@@ -91,13 +91,6 @@ func (svc *AuthService) ValidateSignUp(dto *dtos.Register) (string, error) {
 
 	// NOTE: moved password hashing to model BeforeCreate lifecycle.
 
-	// hashedPw, err := utils.HashPassword(dto.Password)
-
-	// if err != nil {
-	// 	logger.AppLogger.ErrorF("AuthService.ValidateSignUp", "%v", err)
-	// 	return "", err
-	// }
-
 	model := &models.UserModel{
 		Email:     dto.Email,
 		Password:  dto.Password, // hashedPw,
