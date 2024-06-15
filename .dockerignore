@@ -1,0 +1,11 @@
+Dockerfile
+.vscode
+bin
+api
+coverage
+test
+tmp
+.git
+.gitignore
+*.md
+*.env*

@@ -22,6 +22,7 @@
 # vendor/
 bin
 coverage
+tmp
 
 # Go workspace file
 go.work

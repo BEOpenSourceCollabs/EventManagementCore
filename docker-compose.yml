@@ -1,12 +1,38 @@
 version: "3.8"
 
 services:
+    
+  event-mgmt-core:
+    container_name: event-mgmt-core
+    build: .
+    depends_on:
+      - db
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DATABASE_HOST=event-mgmt-postgres
+    develop:
+      watch:
+      - action: sync+restart
+        path: .
+        target: /app
+        ignore:
+          - bin/
+          - api/
+          - tmp/
+          - coverage/
+          - .vscode/
+    networks:
+      - event-mgmt-network
+    ports: 
+      - 8081:8081
+
   db:
     image: postgres
     container_name: event-mgmt-postgres
     restart: always
     ports:
-      - "5432:5432"
+      - 5432:5432
     env_file:
       - db.env
     volumes:
@@ -22,7 +48,7 @@ services:
     container_name: event-mgmt-pgadmin
     restart: always
     ports:
-      - "8888:80"
+      - 8888:80
     env_file:
       - db.env
     volumes:
