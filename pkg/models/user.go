@@ -15,6 +15,9 @@ type UserModel struct {
 	Model
 	Username  string         `db:"username" json:"username"`
 	Email     string         `db:"email" json:"email"`
+	ID        string         `db:"id"`
+	GoogleId  sql.NullString `db:"google_id" json:"-"`
+	AvatarUrl sql.NullString `db:"avatar_url"`
 	Password  string         `db:"password" json:"-"`
 	FirstName sql.NullString `db:"first_name" json:"first_name"`
 	LastName  sql.NullString `db:"last_name" json:"last_name"`
