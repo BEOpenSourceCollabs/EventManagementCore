@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -77,9 +76,8 @@ func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload := dtos.CreateOrUpdateUser{}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, []string{err.Error()})
+	if err := utils.ReadJson(w, r, &payload); err != nil {
+		utils.WriteRequestPayloadError(err, w)
 		return
 	}
 
