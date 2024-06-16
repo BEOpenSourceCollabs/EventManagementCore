@@ -584,13 +584,6 @@
                   "allOf": [
                     {
                       "$ref": "#/components/schemas/UnauthorizedResponse"
-                    },
-                    {
-                      "properties": {
-                        "messages": {
-                          "example": "user is missing the required role 'admin'"
-                        }
-                      }
                     }
                   ]
                 }
@@ -670,7 +663,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LoginFail"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/UnauthorizedResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -732,7 +729,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LoginFail"
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
                 }
               }
             }
