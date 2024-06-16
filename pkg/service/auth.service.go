@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrUserAlreadyExists  = errors.New("user already exists with given email")
-	ErrUserNotFound       = errors.New("user not found")
-	ErrInvalidGoogleToken = errors.New("google id token is invalid")
+	ErrInvalidCredentials  = errors.New("invalid credentials")
+	ErrUserAlreadyExists   = errors.New("user already exists with given email")
+	ErrUserNotFound        = errors.New("user not found")
+	ErrInvalidGoogleToken  = errors.New("google id token is invalid")
+	ErrGoogleClietIdNotSet = errors.New("google client id not configured")
 )
 
 type IAuthService interface {
@@ -136,6 +137,11 @@ func (svc *AuthService) CheckUser(id string) (*dtos.LoginUser, error) {
 // validates google ID token and logs in google user
 func (svc *AuthService) ValidateGoogleSignIn(idToken string) (*dtos.LoginSuccess, error) {
 
+	if svc.config.GoogleClientId == "" {
+		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignIn", "google client id not configured")
+		return nil, ErrGoogleClietIdNotSet
+	}
+
 	payload, err := google.NewValidator().ValidateToken(idToken, svc.config.GoogleClientId)
 
 	if err != nil {
@@ -186,6 +192,11 @@ func (svc *AuthService) ValidateGoogleSignIn(idToken string) (*dtos.LoginSuccess
 
 // validates google ID token and registeres google user
 func (svc *AuthService) ValidateGoogleSignUp(dto *dtos.GoogleSignUpRequest) (*dtos.LoginSuccess, error) {
+
+	if svc.config.GoogleClientId == "" {
+		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignUp", "google client id not configured")
+		return nil, ErrGoogleClietIdNotSet
+	}
 
 	payload, err := google.NewValidator().ValidateToken(dto.IdToken, svc.config.GoogleClientId)
 
