@@ -29,7 +29,6 @@ func ReadJson(w http.ResponseWriter, r *http.Request, dest interface{}) error {
 
 // handles common json parsing errors and writes error response
 func WriteRequestPayloadError(err error, w http.ResponseWriter) {
-
 	var maxBytesError *http.MaxBytesError
 	var syntaxError *json.SyntaxError
 	var unmarshalTypeError *json.UnmarshalTypeError
@@ -54,5 +53,4 @@ func WriteRequestPayloadError(err error, w http.ResponseWriter) {
 		WriteInternalErrorJsonResponse(w)
 		return
 	}
-
 }

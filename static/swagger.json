@@ -79,12 +79,26 @@
               }
             }
           },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BadRequestResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "401": {
             "description": "Invalid Credentials",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LoginFail"
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
                 }
               }
             }
@@ -132,11 +146,15 @@
             }
           },
           "400": {
-            "description": "Bad sign up request",
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BadRequestResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BadRequestResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -168,6 +186,434 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CheckResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServerErrorResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "repository connection lost"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "tokenAuth": []
+          }
+        ]
+      }
+    },
+    "/users": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "operationId": "HandleCreateUser",
+        "summary": "create user",
+        "description": "**Requires authenticated user with the 'admin' role.**",
+        "requestBody": {
+          "description": "user's information",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrUpdateUser"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful user created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/RestAPIResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "$ref": "#/components/schemas/User"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/UnauthorizedResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "user is missing the required role 'admin'"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServerErrorResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "repository connection lost"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "tokenAuth": []
+          }
+        ]
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "operationId": "HandleGetUserById",
+        "summary": "get user by id",
+        "description": "**Requires authenticated user with the 'admin' role.**",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuidv4"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/RestAPIResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "$ref": "#/components/schemas/User"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/UnauthorizedResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "user is missing the required role 'admin'"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServerErrorResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "repository connection lost"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "tokenAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "user"
+        ],
+        "operationId": "HandleUpdateUserById",
+        "summary": "update user by id",
+        "description": "**Requires authenticated user with the 'admin' role.**",
+        "requestBody": {
+          "description": "user's information",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrUpdateUser"
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuidv4"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/RestAPIResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/User"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BadRequestResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/UnauthorizedResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "user is missing the required role 'admin'"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServerErrorResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "repository connection lost"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "tokenAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "user"
+        ],
+        "operationId": "HandleDeleteUserById",
+        "summary": "delete user by id",
+        "description": "**Requires authenticated user with the 'admin' role.**",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuidv4"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/RestAPIResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BadRequestResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/UnauthorizedResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "user is missing the required role 'admin'"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServerErrorResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "repository connection lost"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -208,53 +654,176 @@
           }
         }
       },
-      "CheckResponse": {
+      "RestAPIResponse": {
         "type": "object",
         "properties": {
           "success": {
             "type": "boolean",
             "example": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/UserInfo"
           }
         }
+      },
+      "ErrorAPIResponse": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RestAPIResponse"
+          },
+          {
+            "properties": {
+              "success": {
+                "example": false
+              },
+              "code": {
+                "type": "string",
+                "example": "AUTH_INVALID_CREDENTIALS"
+              },
+              "messages": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "example": "more information about the error..."
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "example": "more information about the error..."
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
       },
       "BadRequestResponse": {
         "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": false
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorAPIResponse"
           },
-          "code": {
-            "type": "string",
-            "example": "BAD_REQUEST"
-          },
-          "messages": {
-            "type": "array",
-            "items": {
-              "example": "validation error",
-              "type": "string"
+          {
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "BAD_REQUEST"
+              },
+              "messages": {
+                "example": [
+                  "validation error"
+                ]
+              }
             }
           }
-        }
+        ]
       },
-      "RegisterRequest": {
-        "required": [
-          "email",
-          "username",
-          "password"
-        ],
+      "ServerErrorResponse": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorAPIResponse"
+          },
+          {
+            "properties": {
+              "code": {
+                "example": "INTERNAL_SERVER_ERROR"
+              },
+              "messages": {
+                "example": [
+                  "Service is unavailable"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "UnauthorizedResponse": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorAPIResponse"
+          },
+          {
+            "properties": {
+              "code": {
+                "example": "AUTH_INVALID_CREDENTIALS"
+              },
+              "messages": {
+                "example": [
+                  "invalid credentials"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "NotFoundErrorResponse": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorAPIResponse"
+          },
+          {
+            "properties": {
+              "code": {
+                "example": "NOT_FOUND"
+              },
+              "messages": {
+                "example": [
+                  "user with id 9dc2391b-595e-4a9a-aefb-75dbe18fe5ca does not exist"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "CheckResponse": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RestAPIResponse"
+          },
+          {
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/UserInfo"
+              }
+            }
+          }
+        ]
+      },
+      "CreateOrUpdateUser": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserData"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": [
+                  "user",
+                  "organizer",
+                  "admin"
+                ]
+              },
+              "verified": {
+                "type": "boolean",
+                "example": true
+              }
+            }
+          }
+        ]
+      },
+      "UserData": {
         "type": "object",
         "properties": {
           "email": {
             "type": "string",
-            "example": "example@email.com"
-          },
-          "password": {
-            "type": "string",
-            "description": "password must be at least 6 characters long and alphanumeric"
+            "example": "curiousdev@bedevs.org"
           },
           "first_name": {
             "type": "string",
@@ -270,50 +839,58 @@
           }
         }
       },
-      "RegisterResponse": {
+      "RegisterRequest": {
+        "required": [
+          "email",
+          "username",
+          "password"
+        ],
         "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserData"
           },
-          "data": {
-            "type": "string",
-            "example": "successfully signed up"
-          }
-        }
-      },
-      "ServerErrorResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": false
-          },
-          "code": {
-            "type": "string",
-            "example": "INTERNAL_SERVER_ERROR"
-          },
-          "messages": {
-            "type": "array",
-            "items": {
-              "example": "Service is unavailable",
-              "type": "string"
+          {
+            "properties": {
+              "password": {
+                "type": "string",
+                "example": "CuriousDevs2024!",
+                "description": "password must be at least 6 characters long and alphanumeric"
+              }
             }
           }
-        }
+        ]
+      },
+      "RegisterResponse": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RestAPIResponse"
+          },
+          {
+            "properties": {
+              "data": {
+                "type": "string",
+                "example": "successfully signed up"
+              }
+            }
+          }
+        ]
       },
       "LoginResponse": {
         "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RestAPIResponse"
           },
-          "data": {
-            "$ref": "#/components/schemas/LoginSuccessDTO"
+          {
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/LoginSuccessDTO"
+              }
+            }
           }
-        }
+        ]
       },
       "LoginRequest": {
         "required": [
@@ -324,10 +901,11 @@
         "properties": {
           "email": {
             "type": "string",
-            "example": "example@email.com"
+            "example": "curiousdev@bedevs.org"
           },
           "password": {
-            "type": "string"
+            "type": "string",
+            "example": "CuriousDevs2024!"
           }
         }
       },
@@ -340,26 +918,6 @@
           "access_token": {
             "type": "string",
             "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-          }
-        }
-      },
-      "LoginFail": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": false
-          },
-          "code": {
-            "type": "string",
-            "example": "AUTH_INVALID_CREDENTIALS"
-          },
-          "messages": {
-            "type": "array",
-            "items": {
-              "example": "invalid credentials",
-              "type": "string"
-            }
           }
         }
       },
@@ -389,6 +947,81 @@
           "avatar": {
             "type": "string",
             "example": "https://s3-bucket/avatar.png"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "e5f04d06-a6ff-4522-a5f4-86b3c150991c"
+          },
+          "username": {
+            "type": "string",
+            "example": "john_doe"
+          },
+          "email": {
+            "type": "string",
+            "example": "curiousdev@bedevs.org"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "john"
+          },
+          "second_name": {
+            "type": "string",
+            "example": "doe"
+          },
+          "birthday": {
+            "$ref": "#/components/schemas/NullTime"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "organizer",
+              "admin"
+            ]
+          },
+          "verified": {
+            "type": "boolean",
+            "example": false
+          },
+          "about": {
+            "$ref": "#/components/schemas/NullString"
+          },
+          "created_at": {
+            "type": "string",
+            "example": "2024-06-14T19:17:50.776Z",
+            "format": "datetime"
+          },
+          "updated_at": {
+            "type": "string",
+            "example": "2024-06-14T19:17:50.776Z",
+            "format": "datetime"
+          }
+        }
+      },
+      "NullTime": {
+        "type": "object",
+        "properties": {
+          "Time": {
+            "type": "string"
+          },
+          "Valid": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NullString": {
+        "type": "object",
+        "properties": {
+          "String": {
+            "type": "string"
+          },
+          "Valid": {
+            "type": "boolean"
           }
         }
       },

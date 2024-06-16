@@ -19,7 +19,7 @@ clean:
 
 # Compiles the Go source code into a binary.
 compile:
-	@go build $(LDFLAGS) -o $(OUT) main.go
+	@go build $(LDFLAGS) -o bin/emc main.go
 
 # Builds the Go project and runs the resulting binary.
 run:
