@@ -1,6 +1,12 @@
 package config
 
+import "strings"
+
 type GoEnv string
+
+func (env GoEnv) IsProduction() bool {
+	return strings.EqualFold(string(env), "production")
+}
 
 const (
 	Dev  GoEnv = "development"

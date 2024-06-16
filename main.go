@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
@@ -29,16 +28,29 @@ func main() {
 
 	// Create a new instance of the appRouter
 	router := net.NewAppRouter()
+	// Apply default middleware
+	router.Use(
+		middleware.RequestLoggerMiddleware{},
+	)
+
+	// Apply development middleware(s)
+	if !envConfig.Env.IsProduction() {
+		router.Use(
+			middleware.CorsMiddleware{
+				Options: middleware.WideOpen,
+			},
+		)
+	}
 
 	// Register static files handler
 	router.Get("/", fs)
 
-	// Register a GET route for the root URL ("/") with CORS middleware
-	router.Get("/api/health", middleware.CorsMiddleware(http.HandlerFunc(
+	// Register a GET route for the root URL ("/")
+	router.Get("/api/health", http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Ok"))
 		},
-	), middleware.WideOpen)) // Use the WideOpen CORS options to allow unrestricted access
+	)) // Use the WideOpen CORS options to allow unrestricted access
 
 	userRepo := repository.NewSQLUserRepository(
 		database,
@@ -59,20 +71,7 @@ func main() {
 		&envConfig.Security.Authentication,
 	)
 
-	// http server configured with some defaults
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", envConfig.Port),
-		Handler:      middleware.RequestLoggerMiddleware(router),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
-
-	logger.AppLogger.InfoF("main", "Starting server in %s mode on %s", envConfig.Env, srv.Addr)
-
-	// Start the HTTP server using the router
-	err = srv.ListenAndServe()
-
-	logger.AppLogger.Fatal("main", err)
-
+	address := fmt.Sprintf(":%d", envConfig.Port)
+	logger.AppLogger.InfoF("main", "Starting server in %s mode on %s", envConfig.Env, address)
+	logger.AppLogger.Fatal("main", http.ListenAndServe(address, router))
 }

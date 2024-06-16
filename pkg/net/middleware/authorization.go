@@ -9,7 +9,11 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 )
 
-func ProtectMiddleware(next http.Handler, secret string) http.Handler {
+type JWTBearerMiddleware struct {
+	Secret string
+}
+
+func (jwtmw JWTBearerMiddleware) BeforeNext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		//extract auth header
@@ -30,7 +34,7 @@ func ProtectMiddleware(next http.Handler, secret string) http.Handler {
 
 		//validate token
 		token := parts[1]
-		payload, err := utils.ValidateToken(token, secret)
+		payload, err := utils.ValidateToken(token, jwtmw.Secret)
 
 		if err != nil {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidAuthToken, http.StatusUnauthorized, nil)

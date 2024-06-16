@@ -89,22 +89,17 @@ func (svc *AuthService) ValidateSignUp(dto *dtos.Register) (string, error) {
 		return "", ErrUserAlreadyExists
 	}
 
-	hashedPw, err := utils.HashPassword(dto.Password)
-
-	if err != nil {
-		logger.AppLogger.ErrorF("AuthService.ValidateSignUp", "%v", err)
-		return "", err
-	}
+	// NOTE: moved password hashing to model BeforeCreate lifecycle.
 
 	model := &models.UserModel{
 		Email:     dto.Email,
-		Password:  hashedPw,
+		Password:  dto.Password, // hashedPw,
 		FirstName: sql.NullString{String: dto.FirstName, Valid: true},
 		LastName:  sql.NullString{String: dto.LastName, Valid: true},
 		Username:  dto.Username,
 	}
 
-	err = svc.userRepo.InsertUser(model)
+	err := svc.userRepo.InsertUser(model)
 
 	if err != nil {
 		logger.AppLogger.ErrorF("AuthService.ValidateSignUp", "%v", err)

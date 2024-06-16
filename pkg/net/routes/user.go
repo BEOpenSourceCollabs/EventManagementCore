@@ -1,8 +1,7 @@
 package routes
 
 import (
-	"database/sql"
-	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
@@ -17,48 +16,50 @@ import (
 )
 
 type userRoutes struct {
-	UserContextHelpers // include user context helpers
-	userRepository     repository.UserRepository
+	net.UserContextHelpers // include user context helpers
+	userRepository         repository.UserRepository
 }
 
 func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepository, authConfig *service.AuthServiceConfiguration) userRoutes {
 	routes := userRoutes{
 		/* inject dependencies */
 		userRepository: userRepository,
-		UserContextHelpers: UserContextHelpers{
-			r: &userRepository,
+		UserContextHelpers: net.UserContextHelpers{
+			R: &userRepository,
 		},
+	}
+
+	// initialize a protect middleware (factory) to wrap and protect each of the routes.
+	protectMiddleware := middleware.JWTBearerMiddleware{
+		Secret: authConfig.Secret,
 	}
 
 	// mount routes to router.
 	router.Post(
 		"/api/users",
-		middleware.ProtectMiddleware(
-			http.HandlerFunc(routes.HandleCreateUser),
-			authConfig.Secret,
-		),
+		protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleCreateUser)),
 	)
 	router.Get(
 		"/api/users/{id}",
-		middleware.ProtectMiddleware(
-			http.HandlerFunc(routes.HandleGetUserById),
-			authConfig.Secret,
-		),
+		protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleGetUserById)),
 	)
 	router.Put(
 		"/api/users/{id}",
-		middleware.ProtectMiddleware(
-			http.HandlerFunc(routes.HandleUpdateUserById),
-			authConfig.Secret,
-		),
+		protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleUpdateUserById)),
 	)
 	router.Delete(
 		"/api/users/{id}",
-		middleware.ProtectMiddleware(
-			http.HandlerFunc(routes.HandleDeleteUserById),
-			authConfig.Secret,
-		),
+		protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleDeleteUserById)),
 	)
+
+	// Add basic preflight handlers
+	router.Options("/api/users", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	router.Options("/api/users/{id}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
 	return routes
 }
 
@@ -66,78 +67,69 @@ func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, err.Error())
+		if errors.Is(err, repository.ErrRepoConnErr) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
+		} else {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, []string{err.Error()})
+		}
 		return
 	}
 
-	payload := &dtos.CreateUser{}
-	if err := json.NewDecoder(r.Body).Decode(payload); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, err.Error())
+	payload := dtos.CreateOrUpdateUser{}
+	if err := utils.ReadJson(w, r, &payload); err != nil {
+		utils.WriteRequestPayloadError(err, w)
 		return
 	}
 
-	hash, _ := utils.HashPassword(payload.Password)
-
-	// TODO: validation
-	// No validation is done while creating a user as admin.
-	// To do so would involve including the authentication service as a dependency.
-	user := &models.UserModel{
-		Username: payload.Username,
-		Email:    payload.Email,
-		Password: hash,
-		FirstName: sql.NullString{
-			String: payload.FirstName,
-			Valid:  true,
-		},
-		LastName: sql.NullString{
-			String: payload.LastName,
-			Valid:  true,
-		},
-		Role:     payload.Role,
-		Verified: payload.Verified,
-	}
+	user := &models.UserModel{}
+	user.UpdateFrom(payload)
 
 	if err := u.userRepository.CreateUser(user); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, err.Error())
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
-	utils.WriteSuccessJsonResponse(w, http.StatusOK, "user created")
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, user)
 }
 
 func (u userRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, err.Error())
+		if errors.Is(err, repository.ErrRepoConnErr) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
+		} else {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, []string{err.Error()})
+		}
 		return
 	}
 
 	id := r.PathValue("id")
 
 	user, err := u.userRepository.GetUserByID(id)
-
 	if err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
+		if errors.Is(err, repository.ErrUserNotFound) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
+			return
+		}
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, []string{err.Error()})
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user": user,
-	})
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, user)
 }
 
 func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, err.Error())
+		if errors.Is(err, repository.ErrRepoConnErr) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
+		} else {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, []string{err.Error()})
+		}
 		return
 	}
 
@@ -147,43 +139,46 @@ func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request)
 	user, err := u.userRepository.GetUserByID(id)
 	if err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
+		if errors.Is(err, repository.ErrUserNotFound) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
+			return
+		}
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
-	// Merge in the request payload
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
+	payload := dtos.CreateOrUpdateUser{}
+	if err := utils.ReadJson(w, r, &payload); err != nil {
+		utils.WriteRequestPayloadError(err, w)
 		return
 	}
+
+	// updates the user from the payload
+	user.UpdateFrom(payload)
 
 	// submit the changes
 	if err := u.userRepository.UpdateUser(user); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
+		if errors.Is(err, repository.ErrUserNotFound) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
+			return
+		}
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user": user,
-	})
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, user)
 }
 
 func (u userRoutes) HandleDeleteUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, err.Error())
+		if errors.Is(err, repository.ErrRepoConnErr) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
+		} else {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidScope, http.StatusUnauthorized, []string{err.Error()})
+		}
 		return
 	}
 
@@ -191,14 +186,13 @@ func (u userRoutes) HandleDeleteUserById(w http.ResponseWriter, r *http.Request)
 
 	if err := u.userRepository.DeleteUser(id); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": err.Error(),
-		})
+		if errors.Is(err, repository.ErrUserNotFound) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
+			return
+		}
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-	})
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, nil)
 }
