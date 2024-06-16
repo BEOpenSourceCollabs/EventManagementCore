@@ -81,6 +81,12 @@ func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// custom validation
+	if validationErrs := payload.Validate(); len(validationErrs) > 0 {
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, validationErrs)
+		return
+	}
+
 	user := &models.UserModel{}
 	user.UpdateFrom(payload)
 

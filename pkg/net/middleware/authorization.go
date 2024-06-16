@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 )
 
@@ -34,9 +35,9 @@ func (jwtmw JWTBearerMiddleware) BeforeNext(next http.Handler) http.Handler {
 
 		//validate token
 		token := parts[1]
-		payload, err := utils.ValidateToken(token, jwtmw.Secret)
+		payload := &dtos.JwtPayload{}
 
-		if err != nil {
+		if err := payload.ParseSignedToken(token, jwtmw.Secret); err != nil {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidAuthToken, http.StatusUnauthorized, nil)
 			return
 		}

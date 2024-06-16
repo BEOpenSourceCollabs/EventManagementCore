@@ -67,7 +67,7 @@ func (svc *AuthService) ValidateSignIn(dto *dtos.Login) (*dtos.LoginSuccess, err
 		Role: existingUser.Role,
 	}
 
-	token, err := utils.GenerateToken(jwtPayload, svc.config.Secret)
+	token, err := jwtPayload.Sign(svc.config.Secret)
 
 	if err != nil {
 		logger.AppLogger.ErrorF("AuthService.ValidateSignIn", "%v", err)
@@ -171,7 +171,7 @@ func (svc *AuthService) ValidateGoogleSignIn(idToken string) (*dtos.LoginSuccess
 		Role: existingUser.Role,
 	}
 
-	token, err := utils.GenerateToken(jwtPayload, svc.config.Secret)
+	token, err := jwtPayload.Sign(svc.config.Secret)
 
 	if err != nil {
 		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignIn", "%v", err)
@@ -248,7 +248,7 @@ func (svc *AuthService) ValidateGoogleSignUp(dto *dtos.GoogleSignUpRequest) (*dt
 		Role: model.Role,
 	}
 
-	token, err := utils.GenerateToken(jwtPayload, svc.config.Secret)
+	token, err := jwtPayload.Sign(svc.config.Secret)
 
 	if err != nil {
 		logger.AppLogger.ErrorF("AuthService.ValidateGoogleSignUp", "%v", err)

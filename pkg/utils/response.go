@@ -14,15 +14,7 @@ type ServerResponse struct {
 	Data     interface{} `json:"data,omitempty"`
 }
 
-type ValidationErrorResponse struct {
-	Field   string      `json:"field"`
-	Rule    string      `json:"rule"`
-	Value   interface{} `json:"value"`
-	Message string      `json:"message"`
-}
-
 func WriteErrorJsonResponse(w http.ResponseWriter, errorCode string, statusCode int, messages interface{}) {
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
