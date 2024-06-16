@@ -205,13 +205,13 @@ func (svc *AuthService) ValidateGoogleSignUp(dto *dtos.GoogleSignUpRequest) (*dt
 		return nil, ErrUserAlreadyExists
 	}
 
-	var fname, lname string
+	var fname, lname = dto.FirstName, dto.LastName
 
-	if dto.FirstName == "" {
+	if fname == "" {
 		fname = claims.FirstName
 	}
 
-	if dto.LastName == "" {
+	if lname == "" {
 		lname = claims.LastName
 	}
 
