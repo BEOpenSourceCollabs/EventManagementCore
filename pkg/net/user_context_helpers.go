@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
@@ -20,9 +21,10 @@ type UserContextHelpers struct {
 // Returns the loaded user if found.
 func (h UserContextHelpers) LoadUserFromContext(r *http.Request) (*models.UserModel, error) {
 	userContext, ok := r.Context().Value(constants.USER_CONTEXT_KEY).(*dtos.JwtPayload)
-	if !ok {
+	if !ok || len(userContext.Id) < 1 {
 		return nil, ErrMissingUserContext
 	}
+	logger.AppLogger.InfoF("LoadUserFromContext", "getting user from context with id '%s' with role '%s'", userContext.Id, userContext.Role)
 	return (*h.R).GetUserByID(userContext.Id)
 }
 
