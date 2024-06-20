@@ -6,10 +6,10 @@ import (
 
 type GoogleSignUpRequest struct {
 	DTO
-	IdToken   string `json:"id_token" validate:"required"`
-	FirstName string `json:"first_name" validate:"omitempty,alpha,max=50"`
-	LastName  string `json:"last_name" validate:"omitempty,alpha,max=50"`
-	Username  string `json:"username" validate:"required,max=20"`
+	IdToken   string `json:"id_token"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Username  string `json:"username"`
 }
 
 // Validate implements validatable returns any validation errors
@@ -44,7 +44,7 @@ func (dto *GoogleSignUpRequest) Validate() (errs []string) {
 
 type GoogleSignInRequest struct {
 	DTO
-	IdToken string `json:"id_token" validate:"required"`
+	IdToken string `json:"id_token"`
 }
 
 // Validate implements validatable returns any validation errors
