@@ -37,7 +37,7 @@ services:
       - db.env
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - event-mgmt-network
 
