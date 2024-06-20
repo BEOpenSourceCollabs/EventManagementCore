@@ -48,28 +48,15 @@ func (r *sqlUserRepository) CreateUser(user *models.UserModel) error {
 
 // GetUserByID retrieves a user from the database by its unique ID.
 func (r *sqlUserRepository) GetUserByID(id string) (*models.UserModel, error) {
-	query := `SELECT
-				id,
-				username,
-				email,
-				password,
-				first_name,
-				last_name,
-				birth_date,
-				role,
-				verified,
-				about,
-				created_at,
-				updated_at,
-				google_id,
-				avatar_url
-			  FROM public.users WHERE id = $1`
+	query := `SELECT * FROM public.users WHERE id = $1`
 
 	user := &models.UserModel{}
 	err := r.database.QueryRow(query, id).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
+		&user.GoogleId,
+		&user.AvatarUrl,
 		&user.Password,
 		&user.FirstName,
 		&user.LastName,
@@ -79,8 +66,6 @@ func (r *sqlUserRepository) GetUserByID(id string) (*models.UserModel, error) {
 		&user.About,
 		&user.CreatedAt,
 		&user.UpdatedAt,
-		&user.GoogleId,
-		&user.AvatarUrl,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

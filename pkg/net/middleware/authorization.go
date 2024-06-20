@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 )
 
@@ -15,6 +17,7 @@ type JWTBearerMiddleware struct {
 
 func (jwtmw JWTBearerMiddleware) BeforeNext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.AppLogger.InfoF("JWTBearerMiddleware", "checking authorization header")
 
 		//extract auth header
 		authorization := r.Header.Get("Authorization")
@@ -34,14 +37,14 @@ func (jwtmw JWTBearerMiddleware) BeforeNext(next http.Handler) http.Handler {
 
 		//validate token
 		token := parts[1]
-		payload, err := utils.ValidateToken(token, jwtmw.Secret)
+		payload := dtos.JwtPayload{}
 
-		if err != nil {
+		if err := payload.ParseSignedToken(token, jwtmw.Secret); err != nil {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidAuthToken, http.StatusUnauthorized, nil)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), constants.USER_CONTEXT_KEY, payload)
+		ctx := context.WithValue(r.Context(), constants.USER_CONTEXT_KEY, &payload)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

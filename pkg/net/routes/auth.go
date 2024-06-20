@@ -11,7 +11,6 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/middleware"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
-	"github.com/go-playground/validator/v10"
 )
 
 type authRoutes struct {
@@ -32,6 +31,8 @@ func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, confi
 	router.Post("/api/auth/login", http.HandlerFunc(routes.HandleLogin))
 	router.Post("/api/auth/register", http.HandlerFunc(routes.HandleSignUp))
 	router.Get("/api/auth/check", protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleCheck)))
+	router.Post("/api/auth/google/signup", http.HandlerFunc(routes.HandleGoogleSignUp))
+	router.Post("/api/auth/google/signin", http.HandlerFunc(routes.HandleGoogleSignIn))
 
 	// Add basic preflight handlers
 	router.Options("/api/auth/login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,9 +44,12 @@ func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, confi
 	router.Options("/api/auth/check", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
-
-	router.Post("/api/auth/google/signin", http.HandlerFunc(routes.HandleGoogleSignIn))
-	router.Post("/api/auth/google/signup", http.HandlerFunc(routes.HandleGoogleSignUp))
+	router.Options("/api/auth/google/signup", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	router.Options("/api/auth/google/signin", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
 
 	return routes
 }
@@ -88,28 +92,14 @@ func (authRouter *authRoutes) HandleSignUp(w http.ResponseWriter, r *http.Reques
 	registerDto := &dtos.Register{}
 
 	//read json into registerDto
-	err := utils.ReadJson(w, r, registerDto)
-
-	if err != nil {
+	if err := utils.ReadJson(w, r, registerDto); err != nil {
 		utils.WriteRequestPayloadError(err, w)
 		return
 	}
 
-	//custom validation
-	err = utils.Validator.Struct(registerDto)
-
-	if err != nil {
-		var validationErrors = []utils.ValidationErrorResponse{}
-		for _, err := range err.(validator.ValidationErrors) {
-			validationErr := utils.ValidationErrorResponse{
-				Field:   err.Field(),
-				Rule:    err.ActualTag(),
-				Value:   err.Value(),
-				Message: utils.HumanFriendlyErrorMessage(err.ActualTag(), err.Param()),
-			}
-			validationErrors = append(validationErrors, validationErr)
-		}
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, validationErrors)
+	// custom validation
+	if validationErrs := registerDto.Validate(); len(validationErrs) > 0 {
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, validationErrs)
 		return
 	}
 
@@ -149,84 +139,19 @@ func (authRouter *authRoutes) HandleCheck(w http.ResponseWriter, r *http.Request
 	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
 }
 
-// handles google sign in
-func (authRouter *authRoutes) HandleGoogleSignIn(w http.ResponseWriter, r *http.Request) {
-
-	gsignInReq := &dtos.GoogleSignInRequest{}
-
-	//read json into registerDto
-	err := utils.ReadJson(w, r, gsignInReq)
-
-	if err != nil {
-		utils.WriteRequestPayloadError(err, w)
-		return
-	}
-
-	err = utils.Validator.Struct(gsignInReq)
-
-	if err != nil {
-		var validationErrors = []utils.ValidationErrorResponse{}
-		for _, err := range err.(validator.ValidationErrors) {
-			validationErr := utils.ValidationErrorResponse{
-				Field:   err.Field(),
-				Rule:    err.ActualTag(),
-				Value:   err.Value(),
-				Message: utils.HumanFriendlyErrorMessage(err.ActualTag(), err.Param()),
-			}
-			validationErrors = append(validationErrors, validationErr)
-		}
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, validationErrors)
-		return
-	}
-
-	result, err := authRouter.authService.ValidateGoogleSignIn(gsignInReq.IdToken)
-
-	if err != nil {
-
-		if errors.Is(err, service.ErrInvalidGoogleToken) {
-			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidAuthToken, http.StatusUnauthorized, []string{"google id token is invalid"})
-			return
-		}
-
-		if errors.Is(err, service.ErrUserNotFound) {
-			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, []string{"user does not exist with provided google account"})
-			return
-		}
-
-		utils.WriteInternalErrorJsonResponse(w)
-		return
-	}
-
-	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
-
-}
-
 // handles google sign up
 func (authRouter *authRoutes) HandleGoogleSignUp(w http.ResponseWriter, r *http.Request) {
 	gsignUpReq := &dtos.GoogleSignUpRequest{}
 
 	//read json into registerDto
-	err := utils.ReadJson(w, r, gsignUpReq)
-
-	if err != nil {
+	if err := utils.ReadJson(w, r, gsignUpReq); err != nil {
 		utils.WriteRequestPayloadError(err, w)
 		return
 	}
 
-	err = utils.Validator.Struct(gsignUpReq)
-
-	if err != nil {
-		var validationErrors = []utils.ValidationErrorResponse{}
-		for _, err := range err.(validator.ValidationErrors) {
-			validationErr := utils.ValidationErrorResponse{
-				Field:   err.Field(),
-				Rule:    err.ActualTag(),
-				Value:   err.Value(),
-				Message: utils.HumanFriendlyErrorMessage(err.ActualTag(), err.Param()),
-			}
-			validationErrors = append(validationErrors, validationErr)
-		}
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, validationErrors)
+	// custom validation
+	if validationErrs := gsignUpReq.Validate(); len(validationErrs) > 0 {
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, validationErrs)
 		return
 	}
 
@@ -249,5 +174,44 @@ func (authRouter *authRoutes) HandleGoogleSignUp(w http.ResponseWriter, r *http.
 	}
 
 	utils.WriteSuccessJsonResponse(w, http.StatusCreated, result)
+
+}
+
+// handles google sign in
+func (authRouter *authRoutes) HandleGoogleSignIn(w http.ResponseWriter, r *http.Request) {
+
+	gsignInReq := &dtos.GoogleSignInRequest{}
+
+	//read json into registerDto
+	if err := utils.ReadJson(w, r, gsignInReq); err != nil {
+		utils.WriteRequestPayloadError(err, w)
+		return
+	}
+
+	// custom validation
+	if validationErrs := gsignInReq.Validate(); len(validationErrs) > 0 {
+		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, validationErrs)
+		return
+	}
+
+	result, err := authRouter.authService.ValidateGoogleSignIn(gsignInReq.IdToken)
+
+	if err != nil {
+
+		if errors.Is(err, service.ErrInvalidGoogleToken) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidAuthToken, http.StatusUnauthorized, []string{"google id token is invalid"})
+			return
+		}
+
+		if errors.Is(err, service.ErrUserNotFound) {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, []string{"user does not exist with provided google account"})
+			return
+		}
+
+		utils.WriteInternalErrorJsonResponse(w)
+		return
+	}
+
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
 
 }
