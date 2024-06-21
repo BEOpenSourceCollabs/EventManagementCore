@@ -121,7 +121,7 @@ func (authRouter *authRoutes) HandleSignUp(w http.ResponseWriter, r *http.Reques
 // checks if access token is valid
 func (authRouter *authRoutes) HandleCheck(w http.ResponseWriter, r *http.Request) {
 
-	user := r.Context().Value(constants.USER_CONTEXT_KEY).(*dtos.JwtPayload)
+	user := r.Context().Value(service.USER_CONTEXT_KEY).(*dtos.JwtPayload)
 
 	result, err := authRouter.authService.CheckUser(user.Id)
 

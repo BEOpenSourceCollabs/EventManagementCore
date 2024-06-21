@@ -12,6 +12,7 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/middleware"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/types"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 )
 
@@ -65,7 +66,7 @@ func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepositor
 
 func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
-	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
+	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
 		if errors.Is(err, repository.ErrRepoConnErr) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
@@ -101,7 +102,7 @@ func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 func (u userRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
-	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
+	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
 		if errors.Is(err, repository.ErrRepoConnErr) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
@@ -129,7 +130,7 @@ func (u userRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 
 func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
-	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
+	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
 		if errors.Is(err, repository.ErrRepoConnErr) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
@@ -178,7 +179,7 @@ func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request)
 
 func (u userRoutes) HandleDeleteUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
-	if _, err := u.LoadUserFromContextWithRole(r, constants.AdminRole); err != nil {
+	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
 		logger.AppLogger.Error("userRoutes", err.Error())
 		if errors.Is(err, repository.ErrRepoConnErr) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})

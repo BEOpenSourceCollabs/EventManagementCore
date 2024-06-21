@@ -1,16 +1,7 @@
 package constants
 
-type contextKey string
-
-type Role string
-
 const (
-	MAX_BODY_SIZE               = 5 * 1024 * 1024 //5MB body limit for HTTP request bodies
-	USER_CONTEXT_KEY contextKey = "user"
-
-	UserRole      Role = "user"
-	AdminRole     Role = "admin"
-	OrganizerRole Role = "organizer"
+	MAX_BODY_SIZE = 5 * 1024 * 1024 //5MB body limit for HTTP request bodies
 )
 
 type errorCodes struct {

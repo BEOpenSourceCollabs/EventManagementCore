@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/types"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 )
 
@@ -21,7 +21,7 @@ type UserModel struct {
 	FirstName sql.NullString `db:"first_name" json:"first_name"`
 	LastName  sql.NullString `db:"last_name" json:"last_name"`
 	BirthDate sql.NullTime   `db:"birth_date" json:"birth_date"`
-	Role      constants.Role `db:"role" json:"role"`
+	Role      types.Role     `db:"role" json:"role"`
 	Verified  bool           `db:"verified" json:"verified"`
 	About     sql.NullString `db:"about" json:"about"`
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 )
 
@@ -44,7 +45,7 @@ func (jwtmw JWTBearerMiddleware) BeforeNext(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), constants.USER_CONTEXT_KEY, &payload)
+		ctx := context.WithValue(r.Context(), service.USER_CONTEXT_KEY, &payload)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
