@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/persist"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 )
@@ -24,13 +23,12 @@ type SecurityConfiguration struct {
 
 // NewEnvironmentConfiguration creates a configuration populated from os environment variables.
 func NewEnvironmentConfiguration() Configuration {
+
 	env, ok := os.LookupEnv("ENV")
 
 	if !ok || env == "" {
 		env = string(Dev)
 	}
-
-	logger.AppLogger.InfoF("NewEnvironmentConfiguration", "loading configuration for %s environment", env)
 
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -35,7 +34,6 @@ func (jwtPayload *JwtPayload) Sign(secret string) (string, error) {
 
 func (jwtPayload *JwtPayload) ParseSignedToken(tokenString, secret string) error {
 	//parse JWT token using secret and same algorithm that is used to sign.
-	logger.AppLogger.InfoF("JwtPayload", "ParseSignedToken(%s)", tokenString)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return token, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
