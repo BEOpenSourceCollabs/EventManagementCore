@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logging"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
@@ -19,20 +19,23 @@ import (
 type userRoutes struct {
 	net.UserContextHelpers // include user context helpers
 	userRepository         repository.UserRepository
+	logger                 logging.Logger
 }
 
-func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepository, authConfig *service.AuthServiceConfiguration) userRoutes {
+func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepository, authConfig *service.AuthServiceConfiguration, lw logging.LogWriter) userRoutes {
 	routes := userRoutes{
 		/* inject dependencies */
 		userRepository: userRepository,
 		UserContextHelpers: net.UserContextHelpers{
 			R: &userRepository,
 		},
+		logger: logging.NewContextLogger(lw, "UserRoutes"),
 	}
 
 	// initialize a protect middleware (factory) to wrap and protect each of the routes.
 	protectMiddleware := middleware.JWTBearerMiddleware{
 		Secret: authConfig.Secret,
+		Logger: logging.NewContextLogger(lw, "UserRoutes.JWTBearerMiddleware"),
 	}
 
 	// mount routes to router.
@@ -67,7 +70,7 @@ func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepositor
 func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
+		u.logger.Error(err, "failed to load user from context")
 		if errors.Is(err, repository.ErrRepoConnErr) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		} else {
@@ -92,7 +95,7 @@ func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	user.UpdateFrom(payload)
 
 	if err := u.userRepository.CreateUser(user); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
+		u.logger.Error(err, "unable to create user")
 		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
@@ -103,7 +106,7 @@ func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 func (u userRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
+		u.logger.Error(err, "failed to load user from context")
 		if errors.Is(err, repository.ErrRepoConnErr) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		} else {
@@ -116,7 +119,7 @@ func (u userRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 
 	user, err := u.userRepository.GetUserByID(id)
 	if err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
+		u.logger.Errorf(err, "unable to find user with id: %s", id)
 		if errors.Is(err, repository.ErrUserNotFound) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
 			return
@@ -131,7 +134,7 @@ func (u userRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
+		u.logger.Error(err, "failed to load user from context")
 		if errors.Is(err, repository.ErrRepoConnErr) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		} else {
@@ -145,7 +148,7 @@ func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request)
 	// Load the user first
 	user, err := u.userRepository.GetUserByID(id)
 	if err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
+		u.logger.Errorf(err, "unable to find user with id: %s", id)
 		if errors.Is(err, repository.ErrUserNotFound) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
 			return
@@ -165,7 +168,7 @@ func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request)
 
 	// submit the changes
 	if err := u.userRepository.UpdateUser(user); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
+		u.logger.Error(err, "unable to update user")
 		if errors.Is(err, repository.ErrUserNotFound) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
 			return
@@ -180,7 +183,7 @@ func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request)
 func (u userRoutes) HandleDeleteUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
+		u.logger.Error(err, "failed to load user from context")
 		if errors.Is(err, repository.ErrRepoConnErr) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.InternalServerError, http.StatusInternalServerError, []string{err.Error()})
 		} else {
@@ -192,7 +195,7 @@ func (u userRoutes) HandleDeleteUserById(w http.ResponseWriter, r *http.Request)
 	id := r.PathValue("id")
 
 	if err := u.userRepository.DeleteUser(id); err != nil {
-		logger.AppLogger.Error("userRoutes", err.Error())
+		u.logger.Errorf(err, "failed to delete user with id %s", id)
 		if errors.Is(err, repository.ErrUserNotFound) {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
 			return

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logging"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
@@ -13,12 +13,13 @@ import (
 )
 
 type JWTBearerMiddleware struct {
+	Logger logging.Logger
 	Secret string
 }
 
 func (jwtmw JWTBearerMiddleware) BeforeNext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.AppLogger.InfoF("JWTBearerMiddleware", "checking authorization header")
+		jwtmw.Logger.Infof("checking authorization header")
 
 		//extract auth header
 		authorization := r.Header.Get("Authorization")

@@ -55,6 +55,22 @@ services:
       - pgadmin_data:/var/lib/pgadmin
     networks:
       - event-mgmt-network
+    configs:
+      - source: servers.json
+        target: /pgadmin4/servers.json
+
+configs:
+  servers.json:
+    content: |
+      {"Servers": {"1": {
+        "Group": "Servers",
+        "Name": "${DATABASE_NAME}",
+        "Host": "event-mgmt-postgres",
+        "Port": ${DATABASE_PORT},
+        "MaintenanceDB": "event-mgmt-db",
+        "Username": "${DATABASE_USER}",
+        "SSLMode": "${DATABASE_SSL_MODE}"
+      }}}
 
 volumes:
   db_data:

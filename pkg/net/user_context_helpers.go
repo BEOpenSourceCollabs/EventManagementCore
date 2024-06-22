@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
@@ -25,7 +24,6 @@ func (h UserContextHelpers) LoadUserFromContext(r *http.Request) (*models.UserMo
 	if !ok || len(userContext.Id) < 1 {
 		return nil, ErrMissingUserContext
 	}
-	logger.AppLogger.InfoF("LoadUserFromContext", "getting user from context with id '%s' with role '%s'", userContext.Id, userContext.Role)
 	return (*h.R).GetUserByID(userContext.Id)
 }
 
