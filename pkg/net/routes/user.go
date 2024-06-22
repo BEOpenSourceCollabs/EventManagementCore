@@ -16,14 +16,15 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 )
 
-type userRoutes struct {
+type jwtUserRoutes struct {
 	net.UserContextHelpers // include user context helpers
 	userRepository         repository.UserRepository
 	logger                 logging.Logger
 }
 
-func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepository, authConfig *service.AuthServiceConfiguration, lw logging.LogWriter) userRoutes {
-	routes := userRoutes{
+// NewJsonWebTokenUserRoutes creates routes using UserRepository and JsonWebTokenService then mounts them to the provided router.
+func NewJsonWebTokenUserRoutes(router net.AppRouter, userRepository repository.UserRepository, jwtService *service.JsonWebTokenService, lw logging.LogWriter) jwtUserRoutes {
+	routes := jwtUserRoutes{
 		/* inject dependencies */
 		userRepository: userRepository,
 		UserContextHelpers: net.UserContextHelpers{
@@ -34,8 +35,8 @@ func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepositor
 
 	// initialize a protect middleware (factory) to wrap and protect each of the routes.
 	protectMiddleware := middleware.JWTBearerMiddleware{
-		Secret: authConfig.Secret,
-		Logger: logging.NewContextLogger(lw, "UserRoutes.JWTBearerMiddleware"),
+		Logger:     logging.NewContextLogger(lw, "UserRoutes.JWTBearerMiddleware"),
+		JWTService: *jwtService,
 	}
 
 	// mount routes to router.
@@ -67,7 +68,7 @@ func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepositor
 	return routes
 }
 
-func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
+func (u jwtUserRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
 		u.logger.Error(err, "failed to load user from context")
@@ -103,7 +104,7 @@ func (u userRoutes) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	utils.WriteSuccessJsonResponse(w, http.StatusOK, user)
 }
 
-func (u userRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
+func (u jwtUserRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
 		u.logger.Error(err, "failed to load user from context")
@@ -131,7 +132,7 @@ func (u userRoutes) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 	utils.WriteSuccessJsonResponse(w, http.StatusOK, user)
 }
 
-func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request) {
+func (u jwtUserRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
 		u.logger.Error(err, "failed to load user from context")
@@ -180,7 +181,7 @@ func (u userRoutes) HandleUpdateUserById(w http.ResponseWriter, r *http.Request)
 	utils.WriteSuccessJsonResponse(w, http.StatusOK, user)
 }
 
-func (u userRoutes) HandleDeleteUserById(w http.ResponseWriter, r *http.Request) {
+func (u jwtUserRoutes) HandleDeleteUserById(w http.ResponseWriter, r *http.Request) {
 	// Ensure that a valid user with the "admin" role is accessing this api.
 	if _, err := u.LoadUserFromContextWithRole(r, types.AdminRole); err != nil {
 		u.logger.Error(err, "failed to load user from context")

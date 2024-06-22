@@ -14,29 +14,26 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 )
 
-type authRoutes struct {
-	config      *service.AuthServiceConfiguration
-	authService service.IAuthService
+type jwtAuthRoutes struct {
+	authService service.AuthenticationService
 	logger      logging.Logger
 }
 
-func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, config *service.AuthServiceConfiguration, lw logging.LogWriter) *authRoutes {
-	routes := &authRoutes{
+// NewJsonWebTokenAuthenticationRoutes creates routes using AuthenticationService and JsonWebTokenService then mounts them to the provided router.
+func NewJsonWebTokenAuthenticationRoutes(router net.AppRouter, authService service.AuthenticationService, jwtService *service.JsonWebTokenService, lw logging.LogWriter) *jwtAuthRoutes {
+	routes := &jwtAuthRoutes{
 		authService: authService,
-		config:      config,
 		logger:      logging.NewContextLogger(lw, "AuthRoutes"),
 	}
 
 	protectMiddleware := middleware.JWTBearerMiddleware{
-		Secret: config.Secret,
-		Logger: logging.NewContextLogger(lw, "AuthRoutes.JWTBearerMiddleware"),
+		Logger:     logging.NewContextLogger(lw, "UserRoutes.JWTBearerMiddleware"),
+		JWTService: *jwtService,
 	}
 
 	router.Post("/api/auth/login", http.HandlerFunc(routes.HandleLogin))
 	router.Post("/api/auth/register", http.HandlerFunc(routes.HandleSignUp))
 	router.Get("/api/auth/check", protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleCheck)))
-	router.Post("/api/auth/google/signup", http.HandlerFunc(routes.HandleGoogleSignUp))
-	router.Post("/api/auth/google/signin", http.HandlerFunc(routes.HandleGoogleSignIn))
 
 	// Add basic preflight handlers
 	router.Options("/api/auth/login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -48,18 +45,11 @@ func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, confi
 	router.Options("/api/auth/check", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
-	router.Options("/api/auth/google/signup", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	router.Options("/api/auth/google/signin", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-
 	return routes
 }
 
-// handles user login
-func (authRouter *authRoutes) HandleLogin(w http.ResponseWriter, r *http.Request) {
+// HandleLogin user login
+func (authRouter *jwtAuthRoutes) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	//initialize login struct
 	loginDto := &dtos.Login{}
 
@@ -90,8 +80,8 @@ func (authRouter *authRoutes) HandleLogin(w http.ResponseWriter, r *http.Request
 	utils.WriteSuccessJsonResponse(w, http.StatusOK, data)
 }
 
-// handles user sign up
-func (authRouter *authRoutes) HandleSignUp(w http.ResponseWriter, r *http.Request) {
+// HandleSignUp user sign up
+func (authRouter *jwtAuthRoutes) HandleSignUp(w http.ResponseWriter, r *http.Request) {
 	//initialize register struct
 	registerDto := &dtos.Register{}
 
@@ -122,10 +112,10 @@ func (authRouter *authRoutes) HandleSignUp(w http.ResponseWriter, r *http.Reques
 	utils.WriteSuccessJsonResponse(w, http.StatusCreated, result)
 }
 
-// checks if access token is valid
-func (authRouter *authRoutes) HandleCheck(w http.ResponseWriter, r *http.Request) {
+// HandleCheck checks if access token is valid
+func (authRouter *jwtAuthRoutes) HandleCheck(w http.ResponseWriter, r *http.Request) {
 
-	user := r.Context().Value(service.USER_CONTEXT_KEY).(*dtos.JwtPayload)
+	user := r.Context().Value(service.USER_CONTEXT_KEY).(*service.JwtPayload)
 
 	result, err := authRouter.authService.CheckUser(user.Id)
 
@@ -141,81 +131,4 @@ func (authRouter *authRoutes) HandleCheck(w http.ResponseWriter, r *http.Request
 	}
 
 	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
-}
-
-// handles google sign up
-func (authRouter *authRoutes) HandleGoogleSignUp(w http.ResponseWriter, r *http.Request) {
-	gsignUpReq := &dtos.GoogleSignUpRequest{}
-
-	//read json into registerDto
-	if err := utils.ReadJson(w, r, gsignUpReq); err != nil {
-		utils.WriteRequestPayloadError(err, w)
-		return
-	}
-
-	// custom validation
-	if validationErrs := gsignUpReq.Validate(); len(validationErrs) > 0 {
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, validationErrs)
-		return
-	}
-
-	result, err := authRouter.authService.ValidateGoogleSignUp(gsignUpReq)
-
-	if err != nil {
-
-		if errors.Is(err, service.ErrInvalidGoogleToken) {
-			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidAuthToken, http.StatusUnauthorized, []string{"google id token is invalid"})
-			return
-		}
-
-		if errors.Is(err, service.ErrUserAlreadyExists) {
-			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, []string{"user account with email already exist"})
-			return
-		}
-
-		utils.WriteInternalErrorJsonResponse(w)
-		return
-	}
-
-	utils.WriteSuccessJsonResponse(w, http.StatusCreated, result)
-
-}
-
-// handles google sign in
-func (authRouter *authRoutes) HandleGoogleSignIn(w http.ResponseWriter, r *http.Request) {
-
-	gsignInReq := &dtos.GoogleSignInRequest{}
-
-	//read json into registerDto
-	if err := utils.ReadJson(w, r, gsignInReq); err != nil {
-		utils.WriteRequestPayloadError(err, w)
-		return
-	}
-
-	// custom validation
-	if validationErrs := gsignInReq.Validate(); len(validationErrs) > 0 {
-		utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, validationErrs)
-		return
-	}
-
-	result, err := authRouter.authService.ValidateGoogleSignIn(gsignInReq.IdToken)
-
-	if err != nil {
-
-		if errors.Is(err, service.ErrInvalidGoogleToken) {
-			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidAuthToken, http.StatusUnauthorized, []string{"google id token is invalid"})
-			return
-		}
-
-		if errors.Is(err, service.ErrUserNotFound) {
-			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.BadRequest, http.StatusBadRequest, []string{"user does not exist with provided google account"})
-			return
-		}
-
-		utils.WriteInternalErrorJsonResponse(w)
-		return
-	}
-
-	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
-
 }

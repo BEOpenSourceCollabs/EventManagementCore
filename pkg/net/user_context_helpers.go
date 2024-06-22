@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/types"
@@ -20,7 +19,7 @@ type UserContextHelpers struct {
 // LoadUserFromContext helper that attempts to read the http.Request's user context key or returns an error if it was not found.
 // Returns the loaded user if found.
 func (h UserContextHelpers) LoadUserFromContext(r *http.Request) (*models.UserModel, error) {
-	userContext, ok := r.Context().Value(service.USER_CONTEXT_KEY).(*dtos.JwtPayload)
+	userContext, ok := r.Context().Value(service.USER_CONTEXT_KEY).(*service.JwtPayload)
 	if !ok || len(userContext.Id) < 1 {
 		return nil, ErrMissingUserContext
 	}

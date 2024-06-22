@@ -22,6 +22,10 @@
       "description": "user authentication"
     },
     {
+      "name": "google auth",
+      "description": "operations using googles authentication"
+    },
+    {
       "name": "events",
       "description": "operations about events"
     },
@@ -622,7 +626,7 @@
     "/auth/google/signup": {
       "post": {
         "tags": [
-          "auth"
+          "google auth"
         ],
         "summary": "sign up using google account",
         "operationId": "google-signup",
@@ -688,7 +692,7 @@
     "/auth/google/signin": {
       "post": {
         "tags": [
-          "auth"
+          "google auth"
         ],
         "summary": "sign in using google account",
         "operationId": "google-signin",

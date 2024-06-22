@@ -9,7 +9,6 @@ import (
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/test/mock"
@@ -70,7 +69,7 @@ func init() {
 
 func TestUserContextHelpers_LoadUserFromContext(t *testing.T) {
 	t.Run("User exists", func(t *testing.T) {
-		payload := &dtos.JwtPayload{
+		payload := &service.JwtPayload{
 			Id:   "user",
 			Role: "user",
 		}
@@ -88,7 +87,7 @@ func TestUserContextHelpers_LoadUserFromContext(t *testing.T) {
 	})
 
 	t.Run("User doesn't exist", func(t *testing.T) {
-		payload := &dtos.JwtPayload{
+		payload := &service.JwtPayload{
 			Id:   "test",
 			Role: "user",
 		}
@@ -122,7 +121,7 @@ func TestUserContextHelpers_LoadUserFromContext(t *testing.T) {
 }
 func TestUserContextHelpers_LoadUserFromContextWithRole(t *testing.T) {
 	t.Run("Admin guard pass", func(t *testing.T) {
-		payload := &dtos.JwtPayload{
+		payload := &service.JwtPayload{
 			Id:   "admin",
 			Role: "admin",
 		}
@@ -140,7 +139,7 @@ func TestUserContextHelpers_LoadUserFromContextWithRole(t *testing.T) {
 	})
 
 	t.Run("User doesn't exist", func(t *testing.T) {
-		payload := &dtos.JwtPayload{
+		payload := &service.JwtPayload{
 			Id:   "test",
 			Role: "user",
 		}
@@ -158,7 +157,7 @@ func TestUserContextHelpers_LoadUserFromContextWithRole(t *testing.T) {
 	})
 
 	t.Run("Admin guard block", func(t *testing.T) {
-		payload := &dtos.JwtPayload{
+		payload := &service.JwtPayload{
 			Id:   "user",
 			Role: "user",
 		}
