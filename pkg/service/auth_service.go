@@ -12,6 +12,12 @@ import (
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils/google"
 )
 
+type contextKey string
+
+const (
+	USER_CONTEXT_KEY contextKey = "user"
+)
+
 var (
 	ErrInvalidCredentials  = errors.New("invalid credentials")
 	ErrUserAlreadyExists   = errors.New("user already exists with given email")

@@ -9,10 +9,11 @@ import (
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/test/mock"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/types"
 )
 
 var userContextHelper net.UserContextHelpers
@@ -32,7 +33,7 @@ func init() {
 					Email:     "test1@domain.com",
 					FirstName: sql.NullString{String: "unit1", Valid: true},
 					LastName:  sql.NullString{String: "test1", Valid: true},
-					Role:      constants.UserRole,
+					Role:      types.UserRole,
 				}, nil
 			case "admin":
 				return &models.UserModel{
@@ -43,7 +44,7 @@ func init() {
 					Email:     "test2@domain.com",
 					FirstName: sql.NullString{String: "unit2", Valid: true},
 					LastName:  sql.NullString{String: "test2", Valid: true},
-					Role:      constants.AdminRole,
+					Role:      types.AdminRole,
 				}, nil
 			case "organizer":
 				return &models.UserModel{
@@ -54,7 +55,7 @@ func init() {
 					Email:     "test3@domain.com",
 					FirstName: sql.NullString{String: "unit3", Valid: true},
 					LastName:  sql.NullString{String: "test3", Valid: true},
-					Role:      constants.OrganizerRole,
+					Role:      types.OrganizerRole,
 				}, nil
 			}
 			return nil, fmt.Errorf("no user found with id %s", id)
@@ -76,7 +77,7 @@ func TestUserContextHelpers_LoadUserFromContext(t *testing.T) {
 		r := httptest.NewRequest("POST", "/", nil)
 
 		user, err := userContextHelper.LoadUserFromContext(r.WithContext(
-			context.WithValue(r.Context(), constants.USER_CONTEXT_KEY, payload),
+			context.WithValue(r.Context(), service.USER_CONTEXT_KEY, payload),
 		))
 		if err != nil {
 			t.Errorf(err.Error())
@@ -94,7 +95,7 @@ func TestUserContextHelpers_LoadUserFromContext(t *testing.T) {
 		r := httptest.NewRequest("POST", "/", nil)
 
 		user, err := userContextHelper.LoadUserFromContext(r.WithContext(
-			context.WithValue(r.Context(), constants.USER_CONTEXT_KEY, payload),
+			context.WithValue(r.Context(), service.USER_CONTEXT_KEY, payload),
 		))
 		if err == nil {
 			t.Errorf("expected error when attempting to load non-existent user from context")
@@ -128,8 +129,8 @@ func TestUserContextHelpers_LoadUserFromContextWithRole(t *testing.T) {
 		r := httptest.NewRequest("POST", "/", nil)
 
 		user, err := userContextHelper.LoadUserFromContextWithRole(r.WithContext(
-			context.WithValue(r.Context(), constants.USER_CONTEXT_KEY, payload),
-		), constants.AdminRole)
+			context.WithValue(r.Context(), service.USER_CONTEXT_KEY, payload),
+		), types.AdminRole)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
@@ -146,8 +147,8 @@ func TestUserContextHelpers_LoadUserFromContextWithRole(t *testing.T) {
 		r := httptest.NewRequest("POST", "/", nil)
 
 		user, err := userContextHelper.LoadUserFromContextWithRole(r.WithContext(
-			context.WithValue(r.Context(), constants.USER_CONTEXT_KEY, payload),
-		), constants.AdminRole)
+			context.WithValue(r.Context(), service.USER_CONTEXT_KEY, payload),
+		), types.AdminRole)
 		if err == nil {
 			t.Errorf("expected error when attempting to load non-existent user from context")
 		}
@@ -164,8 +165,8 @@ func TestUserContextHelpers_LoadUserFromContextWithRole(t *testing.T) {
 		r := httptest.NewRequest("POST", "/", nil)
 
 		user, err := userContextHelper.LoadUserFromContextWithRole(r.WithContext(
-			context.WithValue(r.Context(), constants.USER_CONTEXT_KEY, payload),
-		), constants.AdminRole)
+			context.WithValue(r.Context(), service.USER_CONTEXT_KEY, payload),
+		), types.AdminRole)
 		if err == nil {
 			t.Errorf("expected error when attempting to load user with incorrect role")
 		}
@@ -177,7 +178,7 @@ func TestUserContextHelpers_LoadUserFromContextWithRole(t *testing.T) {
 	t.Run("With no context", func(t *testing.T) {
 		r := httptest.NewRequest("POST", "/", nil)
 
-		user, err := userContextHelper.LoadUserFromContextWithRole(r, constants.AdminRole)
+		user, err := userContextHelper.LoadUserFromContextWithRole(r, types.AdminRole)
 		if err == nil {
 			t.Errorf("expected error when attempting to call with no context")
 		}

@@ -1,13 +1,13 @@
 package dtos
 
-import "github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
+import "github.com/BEOpenSourceCollabs/EventManagementCore/pkg/types"
 
 type LoginUser struct {
 	ID        string         `json:"id"`
 	Username  string         `json:"username"`
 	FirstName string         `json:"first_name"`
 	LastName  string         `json:"last_name"`
-	Role      constants.Role `json:"role"`
+	Role      types.Role `json:"role"`
 }
 
 type LoginSuccess struct {

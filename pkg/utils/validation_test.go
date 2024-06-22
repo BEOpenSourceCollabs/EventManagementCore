@@ -50,7 +50,7 @@ func TestValidation_IsAlphaNumeric(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			actual := utils.IsAlphaNumeric(testcase.in)
 			if actual != testcase.expected {
-				t.Errorf("expecte")
+				t.Errorf("expected '%v' but was '%v'", testcase.expected, actual)
 			}
 		})
 	}

@@ -1,11 +1,11 @@
 package dtos
 
 import (
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/types"
 )
 
 type CreateOrUpdateUser struct {
 	Register
-	Role     constants.Role `json:"role"`
-	Verified *bool          `json:"verified,omitempty"`
+	Role     types.Role `json:"role"`
+	Verified *bool      `json:"verified,omitempty"`
 }

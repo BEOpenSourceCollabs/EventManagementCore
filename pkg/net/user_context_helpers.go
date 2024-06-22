@@ -6,9 +6,10 @@ import (
 	"net/http"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/types"
 )
 
 // UserContextHelpers provides pluggable helpers to route structures that use, user context within requests.
@@ -19,7 +20,7 @@ type UserContextHelpers struct {
 // LoadUserFromContext helper that attempts to read the http.Request's user context key or returns an error if it was not found.
 // Returns the loaded user if found.
 func (h UserContextHelpers) LoadUserFromContext(r *http.Request) (*models.UserModel, error) {
-	userContext, ok := r.Context().Value(constants.USER_CONTEXT_KEY).(*dtos.JwtPayload)
+	userContext, ok := r.Context().Value(service.USER_CONTEXT_KEY).(*dtos.JwtPayload)
 	if !ok || len(userContext.Id) < 1 {
 		return nil, ErrMissingUserContext
 	}
@@ -29,7 +30,7 @@ func (h UserContextHelpers) LoadUserFromContext(r *http.Request) (*models.UserMo
 // LoadUserFromContextWithRole helper that attempts to read the http.Request's user context key or returns an error if it was not found.
 // Returns the loaded user if found and has the role specified in the parameters.
 // This helper can be used as a gaurd to protect routes being accessed by users without the specified role.
-func (h UserContextHelpers) LoadUserFromContextWithRole(r *http.Request, role constants.Role) (*models.UserModel, error) {
+func (h UserContextHelpers) LoadUserFromContextWithRole(r *http.Request, role types.Role) (*models.UserModel, error) {
 	user, err := h.LoadUserFromContext(r)
 	if err != nil {
 		return nil, err

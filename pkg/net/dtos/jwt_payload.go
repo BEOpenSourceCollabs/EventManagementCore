@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/types"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type JwtPayload struct {
 	Id   string
-	Role constants.Role
+	Role types.Role
 }
 
 // Sign generates a signed JWT token for given payload using the provided secret.
@@ -44,7 +44,7 @@ func (jwtPayload *JwtPayload) ParseSignedToken(tokenString, secret string) error
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		(*jwtPayload) = JwtPayload{
 			Id:   claims["sub"].(string),
-			Role: constants.Role(claims["role"].(string)),
+			Role: types.Role(claims["role"].(string)),
 		}
 	}
 
