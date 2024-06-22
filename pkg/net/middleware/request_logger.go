@@ -5,10 +5,12 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logging"
 )
 
-type RequestLoggerMiddleware struct{}
+type RequestLoggerMiddleware struct {
+	Logger logging.Logger
+}
 
 func (rmw RequestLoggerMiddleware) BeforeNext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +19,7 @@ func (rmw RequestLoggerMiddleware) BeforeNext(next http.Handler) http.Handler {
 		next.ServeHTTP(wr, r)
 		end := time.Since(start)
 
-		logger.AppLogger.InfoF("RequestLoggerMiddleware", "Method: %s | Path: %s | Status: %d | Time: %v", r.Method, r.URL.Path, wr.Code, end)
+		rmw.Logger.Infof("Method: %s | Path: %s | Status: %d | Time: %v", r.Method, r.URL.Path, wr.Code, end)
 
 		// Copy headers from recorder to response
 		for k, vs := range wr.Header() {

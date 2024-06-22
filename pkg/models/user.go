@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
@@ -28,7 +27,6 @@ type UserModel struct {
 
 // BeforeCreate overrides model lifecycle hook, hashes the users password before proceeding.
 func (m *UserModel) BeforeCreate() error {
-	logger.AppLogger.InfoF("UserModel", "overridden lifecycle BeforeCreate() - hashing password")
 	hash, err := utils.HashPassword(m.Password)
 	if err != nil {
 		return err
@@ -39,7 +37,6 @@ func (m *UserModel) BeforeCreate() error {
 
 // BeforeUpdated overrides model lifecycle hook, updating the updated_at time.
 func (m *UserModel) BeforeUpdated() error {
-	logger.AppLogger.InfoF("UserModel", "overridden lifecycle BeforeUpdated() - updating updated_at")
 	m.UpdatedAt = time.Now()
 	return nil
 }

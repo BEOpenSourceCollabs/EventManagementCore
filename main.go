@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/config"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logger"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logging"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/middleware"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/routes"
@@ -17,20 +18,34 @@ import (
 func main() {
 	envConfig := config.NewEnvironmentConfiguration()
 
+	// initialize log writer that outs logs as either json or text to stdout
+	var lw logging.LogWriter
+	if envConfig.Env.IsProduction() {
+		lw = logging.NewJsonLogWriter(os.Stdout, logging.INFO)
+	} else {
+		lw = logging.NewTextLogWriter(os.Stdout, logging.INFO)
+	}
+	// ContextLogger for main funcition, uses default log writer to print logs with Context
+	mainLogger := logging.NewContextLogger(lw, "Main")
+
+	mainLogger.Infof("loaded environment configuration for %s", envConfig.Env)
+
 	// Create a static handler to serve contents of 'static' folder.
 	fs := http.FileServer(http.Dir("./static"))
 
 	// initialize database from environment configuration
 	database, err := persist.NewDatabase(envConfig.Database)
 	if err != nil {
-		logger.AppLogger.Fatal("main", err)
+		mainLogger.Fatal(err, "database connection error")
 	}
 
 	// Create a new instance of the appRouter
-	router := net.NewAppRouter()
+	router := net.NewAppRouter(lw)
 	// Apply default middleware
 	router.Use(
-		middleware.RequestLoggerMiddleware{},
+		middleware.RequestLoggerMiddleware{
+			Logger: logging.NewContextLogger(lw, "RequestLoggerMiddleware"),
+		},
 	)
 
 	// Apply development middleware(s)
@@ -61,17 +76,24 @@ func main() {
 		router,
 		userRepo,
 		&envConfig.Security.Authentication,
+		lw,
 	)
 
-	authService := service.NewAuthService(&envConfig.Security.Authentication, userRepo)
+	authService := service.NewAuthService(&envConfig.Security.Authentication, userRepo, lw)
 
 	routes.NewAuthRoutes(
 		router,
 		authService,
 		&envConfig.Security.Authentication,
+		lw,
 	)
 
 	address := fmt.Sprintf(":%d", envConfig.Port)
-	logger.AppLogger.InfoF("main", "Starting server in %s mode on %s", envConfig.Env, address)
-	logger.AppLogger.Fatal("main", http.ListenAndServe(address, router))
+	mainLogger.Infof("Starting server in %s mode on %s", envConfig.Env, address)
+
+	err = http.ListenAndServe(address, router)
+
+	if err != nil {
+		mainLogger.Fatal(err, "failed to start http server")
+	}
 }
