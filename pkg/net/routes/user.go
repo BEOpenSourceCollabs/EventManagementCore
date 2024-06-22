@@ -18,7 +18,7 @@ import (
 type userRoutes struct {
 	net.UserContextHelpers // include user context helpers
 	userRepository         repository.UserRepository
-	logger                 *logging.ContextLogger
+	logger                 logging.Logger
 }
 
 func NewUserRoutes(router net.AppRouter, userRepository repository.UserRepository, authConfig *service.AuthServiceConfiguration, lw logging.LogWriter) userRoutes {

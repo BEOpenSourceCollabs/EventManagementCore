@@ -12,7 +12,7 @@ import (
 )
 
 type JWTBearerMiddleware struct {
-	Logger *logging.ContextLogger
+	Logger logging.Logger
 	Secret string
 }
 

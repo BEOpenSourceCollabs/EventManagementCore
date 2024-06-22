@@ -34,7 +34,7 @@ type AuthServiceConfiguration struct {
 }
 
 type AuthService struct {
-	logger   *logging.ContextLogger
+	logger   logging.Logger
 	config   *AuthServiceConfiguration
 	userRepo repository.UserRepository
 }

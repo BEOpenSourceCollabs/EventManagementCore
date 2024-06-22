@@ -9,7 +9,7 @@ import (
 )
 
 type RequestLoggerMiddleware struct {
-	Logger *logging.ContextLogger
+	Logger logging.Logger
 }
 
 func (rmw RequestLoggerMiddleware) BeforeNext(next http.Handler) http.Handler {

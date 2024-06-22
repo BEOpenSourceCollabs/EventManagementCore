@@ -13,7 +13,7 @@ import (
 type AppRouter struct {
 	*http.ServeMux // ServeMux is an HTTP request multiplexer that matches the URL of each incoming request against a list of registered patterns
 	middleware     []middleware.Middleware
-	logger         *logging.ContextLogger
+	logger         logging.Logger
 }
 
 // NewAppRouter creates a new AppRouter instance with an initialized ServeMux

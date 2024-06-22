@@ -17,7 +17,7 @@ import (
 type authRoutes struct {
 	config      *service.AuthServiceConfiguration
 	authService service.IAuthService
-	logger      *logging.ContextLogger
+	logger      logging.Logger
 }
 
 func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, config *service.AuthServiceConfiguration, lw logging.LogWriter) *authRoutes {
