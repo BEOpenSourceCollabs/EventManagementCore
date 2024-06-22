@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logging"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
@@ -16,16 +17,19 @@ import (
 type authRoutes struct {
 	config      *service.AuthServiceConfiguration
 	authService service.IAuthService
+	logger      *logging.ContextLogger
 }
 
-func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, config *service.AuthServiceConfiguration) *authRoutes {
+func NewAuthRoutes(router net.AppRouter, authService service.IAuthService, config *service.AuthServiceConfiguration, lw logging.LogWriter) *authRoutes {
 	routes := &authRoutes{
 		authService: authService,
 		config:      config,
+		logger:      logging.NewContextLogger(lw, "AuthRoutes"),
 	}
 
 	protectMiddleware := middleware.JWTBearerMiddleware{
 		Secret: config.Secret,
+		Logger: logging.NewContextLogger(lw, "AuthRoutes.JWTBearerMiddleware"),
 	}
 
 	router.Post("/api/auth/login", http.HandlerFunc(routes.HandleLogin))
