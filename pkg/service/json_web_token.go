@@ -43,6 +43,13 @@ func NewJsonWebTokenService(config *JsonWebTokenConfiguration, lw logging.LogWri
 func (svc *jsonWebTokenService) Sign(payload JwtPayload) (*string, error) {
 	// Create a new token object, specifying signing method and claims
 
+	if len(payload.Id) < 1 {
+		return nil, fmt.Errorf("jwtPayload must contain an id")
+	}
+	if !payload.Role.IsValid() {
+		return nil, fmt.Errorf("jwtPayload must contain a valid role")
+	}
+
 	svc.logger.Debugf("signing payload with sub: '%s', role: '%s'", payload.Id, payload.Role)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":  payload.Id,
@@ -52,7 +59,7 @@ func (svc *jsonWebTokenService) Sign(payload JwtPayload) (*string, error) {
 
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString([]byte(svc.config.Secret))
-	svc.logger.Debugf("signing payload: '%s'", tokenString)
+	svc.logger.Debugf("signed payload: '%s'", tokenString)
 
 	if err != nil {
 		return nil, err
@@ -71,6 +78,10 @@ func (svc *jsonWebTokenService) ParseSignedToken(tokenString string) (*JwtPayloa
 		}
 		return []byte(svc.config.Secret), nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		svc.logger.Debugf("parsing token claims: id => '%s', role => '%s'", claims["sub"], claims["role"])
