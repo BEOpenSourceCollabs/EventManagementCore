@@ -7,14 +7,13 @@ import (
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logging"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/service"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/utils"
 )
 
 type JWTBearerMiddleware struct {
-	Logger logging.Logger
-	Secret string
+	JWTService service.JsonWebTokenService
+	Logger     logging.Logger
 }
 
 func (jwtmw JWTBearerMiddleware) BeforeNext(next http.Handler) http.Handler {
@@ -38,15 +37,13 @@ func (jwtmw JWTBearerMiddleware) BeforeNext(next http.Handler) http.Handler {
 		}
 
 		//validate token
-		token := parts[1]
-		payload := dtos.JwtPayload{}
-
-		if err := payload.ParseSignedToken(token, jwtmw.Secret); err != nil {
+		payload, err := jwtmw.JWTService.ParseSignedToken(parts[1])
+		if err != nil {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidAuthToken, http.StatusUnauthorized, nil)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), service.USER_CONTEXT_KEY, &payload)
+		ctx := context.WithValue(r.Context(), service.USER_CONTEXT_KEY, payload)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

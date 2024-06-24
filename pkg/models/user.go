@@ -31,7 +31,7 @@ func (m *UserModel) BeforeCreate() error {
 	if err != nil {
 		return err
 	}
-	m.Password = hash
+	m.Password = *hash
 	return nil
 }
 

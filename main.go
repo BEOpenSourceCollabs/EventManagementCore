@@ -71,20 +71,40 @@ func main() {
 		database,
 	)
 
-	// initialize and mount routes
-	routes.NewUserRoutes(
-		router,
-		userRepo,
-		&envConfig.Security.Authentication,
+	jwtService := service.NewJsonWebTokenService(
+		&envConfig.Security.JsonWebToken,
 		lw,
 	)
 
-	authService := service.NewAuthService(&envConfig.Security.Authentication, userRepo, lw)
+	authService := service.NewJsonWebTokenAuthenticationService(
+		userRepo,
+		jwtService,
+		lw,
+	)
 
-	routes.NewAuthRoutes(
+	// initialize and mount routes
+	routes.NewJsonWebTokenUserRoutes(
+		router,
+		userRepo,
+		&jwtService,
+		lw,
+	)
+
+	routes.NewJsonWebTokenAuthenticationRoutes(
 		router,
 		authService,
-		&envConfig.Security.Authentication,
+		&jwtService,
+		lw,
+	)
+
+	routes.NewGoogleAuthenticationRoutes(
+		router,
+		service.NewGoogleAuthenticationService(
+			&envConfig.Security.Google,
+			userRepo,
+			jwtService,
+			lw,
+		),
 		lw,
 	)
 

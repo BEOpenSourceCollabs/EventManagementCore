@@ -18,7 +18,8 @@ type Configuration struct {
 }
 
 type SecurityConfiguration struct {
-	Authentication service.AuthServiceConfiguration
+	JsonWebToken service.JsonWebTokenConfiguration
+	Google       service.GoogleAuthenticationConfiguration
 }
 
 // NewEnvironmentConfiguration creates a configuration populated from os environment variables.
@@ -48,9 +49,11 @@ func NewEnvironmentConfiguration() Configuration {
 		Port: port,
 		Env:  ValidateEnv(GoEnv(env)),
 		Security: SecurityConfiguration{
-			Authentication: service.AuthServiceConfiguration{
-				Secret:         secret,
-				GoogleClientId: gClientId,
+			JsonWebToken: service.JsonWebTokenConfiguration{
+				Secret: secret,
+			},
+			Google: service.GoogleAuthenticationConfiguration{
+				ClientId: gClientId,
 			},
 		},
 		Database: persist.DatabaseConfiguration{

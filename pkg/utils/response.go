@@ -28,7 +28,6 @@ func WriteErrorJsonResponse(w http.ResponseWriter, errorCode string, statusCode 
 }
 
 func WriteSuccessJsonResponse(w http.ResponseWriter, statusCode int, data interface{}) {
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
@@ -41,7 +40,6 @@ func WriteSuccessJsonResponse(w http.ResponseWriter, statusCode int, data interf
 }
 
 func WriteInternalErrorJsonResponse(w http.ResponseWriter) {
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusInternalServerError)
 
