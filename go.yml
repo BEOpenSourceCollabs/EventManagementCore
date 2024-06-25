@@ -1,0 +1,33 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  TARGET_DIR: /home/${{secrets.SSH_USERNAME}}/apps/event-mgmt-core
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Remote deploy
+      uses: cross-the-world/ssh-scp-ssh-pipelines@v1.1.4
+      with:
+        host: ${{secrets.SSH_HOST}}
+        key: ${{secrets.SSH_KEY}}
+        user: ${{secrets.SSH_USERNAME}}
+        first_ssh: |
+          rm -rf $TARGET_DIR
+          mkdir -p $TARGET_DIR
+        scp: |-
+          "../" => $TARGET_DIR
+          "./EventManagementCore/*" => $TARGET_DIR
+        last_ssh: |-
+          ls -la
