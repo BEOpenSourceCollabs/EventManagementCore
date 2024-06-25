@@ -26,5 +26,5 @@ jobs:
         first_ssh: |
           rm -rf $TARGET_DIR
           mkdir -p $TARGET_DIR
-        scp: |
+        scp: |-
           "." => $TARGET_DIR
