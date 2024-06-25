@@ -1,0 +1,37 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Run unit tests
+      run: go test ./... --tags=unit -v 
+
+    - name: Remote deploy
+      uses: cross-the-world/ssh-scp-ssh-pipelines@v1.1.4
+      with:
+        host: ${{secrets.SSH_HOST}}
+        key: ${{secrets.SSH_KEY}}
+        user: ${{secrets.SSH_USERNAME}}
+        first_ssh: |
+          rm -rf /home/cidc/apps/event-mgmt-core
+          mkdir -p /home/cidc/apps/event-mgmt-core
+        scp: |
+          . => /home/cidc/apps/event-mgmt-core
