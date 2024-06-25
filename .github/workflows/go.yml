@@ -14,16 +14,40 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    # Checkout makes source available for remote deploy.
     - uses: actions/checkout@v4
 
+    # Setup Golang for build and testing.
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.22.3'
 
+    # Build source, not required as we are not deploying the source.
+    # Though may be helpful to ensure the code compiles successfully before deployment.
     - name: Build
       run: go build -v ./...
 
+    # Run tests
     - name: Test
       run: go test -v ./...
 
+    # Deploys all the source (currently).
+    # Might be better to deploy only the compiled binary and do additional setup.
+    - name: Remote deploy
+      uses: cross-the-world/ssh-scp-ssh-pipelines@v1.1.4
+      with:
+        host: ${{secrets.SSH_HOST}}
+        key: ${{secrets.SSH_KEY}}
+        user: ${{secrets.SSH_USERNAME}}
+        first_ssh: |
+          rm -rf $TARGET_DIR
+          mkdir -p $TARGET_DIR
+        scp: |-
+          "." => $TARGET_DIR
+        last_ssh: |-
+          # TODO 
+          # => create .env                             # This will be created each deployment, it can be populated with secrets from gh.
+          # => compile.                                # Make is installed on the target environment, make compile could be used if we don't decide to send only the compiled binary in the future.
+          # => run migrations.                         # Database migrations may need to be in a different gh action or atleast another step, especially if binary is send instead of source. Though migrations could be sent along with the binary if necessary.
+          # => create/refresh daemon service.          # After deployment some daemon service will need to be created or restarted. 
