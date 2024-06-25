@@ -21,7 +21,7 @@ jobs:
         key: ${{secrets.SSH_KEY}}
         user: ${{secrets.SSH_USERNAME}}
         first_ssh: |
-          rm -rf /home/cidc/apps/event-mgmt-core
-          mkdir -p /home/cidc/apps/event-mgmt-core
+          rm -rf /home/${{secrets.SSH_USERNAME}}/apps/event-mgmt-core
+          mkdir -p /home/${{secrets.SSH_USERNAME}}/apps/event-mgmt-core
         scp: |
-          . => /home/cidc/apps/event-mgmt-core
+          . => /home/${{secrets.SSH_USERNAME}}/apps/event-mgmt-core
