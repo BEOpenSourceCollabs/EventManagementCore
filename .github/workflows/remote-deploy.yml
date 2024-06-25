@@ -27,4 +27,4 @@ jobs:
           rm -rf $TARGET_DIR
           mkdir -p $TARGET_DIR
         scp: |
-          "." => $TARGET
+          "." => $TARGET_DIR
