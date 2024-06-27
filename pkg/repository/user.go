@@ -90,7 +90,7 @@ func (r *sqlUserRepository) GetUserByID(id string) (*models.UserModel, error) {
 		if reflect.TypeOf(err) == reflect.TypeOf(&net.OpError{}) {
 			return nil, ErrRepoConnErr
 		}
-		return nil, ErrInvalidId
+		return nil, ErrInvalidUserId
 	}
 
 	return user, nil
@@ -254,7 +254,7 @@ func (r *sqlUserRepository) InsertUser(user *models.UserModel) error {
 }
 
 var (
-	ErrUserNotFound = errors.New("user not found")  // ErrUserNotFound is returned when a user is not found in the database.
-	ErrInvalidId    = errors.New("invalid user id") // ErrUserNotFound is returned when a user id is invalid or malformed.
-	ErrRepoConnErr  = errors.New("repository connection lost")
+	ErrUserNotFound  = errors.New("user not found")  // ErrUserNotFound is returned when a user is not found in the database.
+	ErrInvalidUserId = errors.New("invalid user id") // ErrUserNotFound is returned when a user id is invalid or malformed.
+	ErrRepoConnErr   = errors.New("repository connection lost")
 )
