@@ -33,7 +33,7 @@ type EventModel struct {
 	Description string    `db:"description" json:"description"`
 	StartDate   time.Time `db:"start_date" json:"start_date"`
 	EndDate     time.Time `db:"end_date" json:"end_date"`
-	IsPaid      string    `db:"is_paid" json:"is_paid"`
+	IsPaid      bool      `db:"is_paid" json:"is_paid"`
 	Type        string    `db:"event_type" json:"event_type"`
 	Country     string    `db:"country" json:"country"`
 	City        string    `db:"city" json:"city"`
