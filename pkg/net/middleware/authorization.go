@@ -37,7 +37,7 @@ func (jwtmw JWTBearerMiddleware) BeforeNext(next http.Handler) http.Handler {
 		}
 
 		//validate token
-		payload, err := jwtmw.JWTService.ParseSignedToken(parts[1])
+		payload, err := jwtmw.JWTService.ParseAccessToken(parts[1])
 		if err != nil {
 			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidAuthToken, http.StatusUnauthorized, nil)
 			return
