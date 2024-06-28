@@ -45,11 +45,13 @@ Setup the application environment and add the database configuration.
   DATABASE_NAME=event-mgmt-db
   DATABASE_PORT=5432
   DATABASE_SSL_MODE=disable
+  ACCESS_TOKEN_SECRET=test
+  REFRESH_TOKEN_SECRET=test
 
   # JWT Secret
   SECRET=test123
   ```
-  Ensure to update these to match your database configuration.
+  Ensure to update these to match your database configuration (these are set in `db.env` for development).
 
 ## Run
 
