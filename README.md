@@ -47,6 +47,8 @@ Next setup the application environment and add the database configuration.
   DATABASE_NAME=event-mgmt-db
   DATABASE_PORT=5432
   DATABASE_SSL_MODE=disable
+  ACCESS_TOKEN_SECRET=test
+  REFRESH_TOKEN_SECRET=test
   ```
   Ensure to update these to match your database configuration (these are set in `db.env` for development).
 
@@ -106,6 +108,8 @@ If you want to run the database from `docker-compose.yml` and use that you can d
   DATABASE_NAME=event-mgmt-db
   DATABASE_PORT=5432
   DATABASE_SSL_MODE=disable
+  ACCESS_TOKEN_SECRET=test
+  REFRESH_TOKEN_SECRET=test
   ```
   > Note: the container name 'event-mgmt-postgres' can be used as the host.
 
