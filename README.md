@@ -45,6 +45,10 @@ Setup the application environment and add the database configuration.
   DATABASE_NAME=event-mgmt-db
   DATABASE_PORT=5432
   DATABASE_SSL_MODE=disable
+  ACCESS_TOKEN_SECRET=test
+  REFRESH_TOKEN_SECRET=test
+  ```
+  Ensure to update these to match your database configuration (these are set in `db.env` for development).
 
   # JWT Secret
   SECRET=test123
@@ -122,7 +126,19 @@ If you want to run the database from `docker-compose.yml` and use that you can d
   docker compose up db pgadmin
   ```
 
-  > Note: the database containers name 'event-mgmt-postgres' can be used as the host in your `.env` file when using one of the above commands to run postgres within a container.
+  Example: `.env`
+  
+  ```text
+  DATABASE_HOST=event-mgmt-postgres
+  DATABASE_USER=postgres
+  DATABASE_PASSWORD=postgres
+  DATABASE_NAME=event-mgmt-db
+  DATABASE_PORT=5432
+  DATABASE_SSL_MODE=disable
+  ACCESS_TOKEN_SECRET=test
+  REFRESH_TOKEN_SECRET=test
+  ```
+  > Note: the container name 'event-mgmt-postgres' can be used as the host.
 
 Then run the application:
 

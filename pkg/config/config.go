@@ -37,10 +37,16 @@ func NewEnvironmentConfiguration() Configuration {
 		port = 8081
 	}
 
-	secret, ok := os.LookupEnv("SECRET")
+	accessTokenSecret, ok := os.LookupEnv("ACCESS_TOKEN_SECRET")
 
-	if !ok || secret == "" {
-		panic(errors.New("invalid environment configuration: SECRET is required"))
+	if !ok || accessTokenSecret == "" {
+		panic(errors.New("invalid environment configuration: ACCESS_TOKEN_SECRET is required"))
+	}
+
+	refreshTokenSecret, ok := os.LookupEnv("REFRESH_TOKEN_SECRET")
+
+	if !ok || refreshTokenSecret == "" {
+		panic(errors.New("invalid environment configuration: REFRESH_TOKEN_SECRET is required"))
 	}
 
 	gClientId := os.Getenv("GOOGLE_CLIENT_ID")
@@ -50,7 +56,8 @@ func NewEnvironmentConfiguration() Configuration {
 		Env:  ValidateEnv(GoEnv(env)),
 		Security: SecurityConfiguration{
 			JsonWebToken: service.JsonWebTokenConfiguration{
-				Secret: secret,
+				AccessTokenSecret:  accessTokenSecret,
+				RefreshTokenSecret: refreshTokenSecret,
 			},
 			Google: service.GoogleAuthenticationConfiguration{
 				ClientId: gClientId,
