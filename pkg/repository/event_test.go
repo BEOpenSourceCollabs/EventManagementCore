@@ -2,62 +2,78 @@ package repository_test
 
 import (
 	"context"
-	"log"
+	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
-	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/persist"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/test"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/types"
 )
 
 var (
 	events = []models.EventModel{
 		{
 			Name:        "Music Festival",
-			Type:        "Music",
-			Organizer:   "",
+			Type:        types.OnlineEventType,
 			Description: "A test music festival",
 			StartDate:   time.Now().Add(time.Hour + 24),
 			EndDate:     time.Now().Add(time.Hour + 25),
 			IsPaid:      true,
-			Country:     "England",
+			CountryISO:  "GB",
 			City:        "London",
 		},
 		{
 			Name:        "Coding Meetup",
-			Type:        "Networking",
-			Organizer:   "",
+			Type:        types.BothEventType,
 			Description: "A test networking event",
 			StartDate:   time.Now().Add(time.Hour + 48),
 			EndDate:     time.Now().Add(time.Hour + 49),
 			IsPaid:      false,
-			Country:     "England",
+			CountryISO:  "GB",
 			City:        "London",
 		},
 	}
 )
 
 func TestEventRepository_KitchenSink(t *testing.T) {
-	container, db, err := test.NewTestDatabaseWithContainer(persist.DatabaseConfiguration{
-		User:     "postgres",
-		Password: "postgres",
-		Database: "event-mgmt-db",
+	container, db, err := test.NewTestDatabaseWithContainer(test.TestDatabaseConfiguration{
+		RootRelativePath: "../../",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Clean up the container
-	defer func() {
-		if err := container.Terminate(context.Background()); err != nil {
-			log.Fatalf("failed to terminate container: %s", err)
-		}
-	}()
+	defer container.Terminate(context.Background())
+
 	eventRepo := repository.NewSQLEventRepository(db)
+	userRepo := repository.NewSQLUserRepository(db)
+
+	organizer := models.UserModel{
+		Username: "org0",
+		FirstName: sql.NullString{
+			String: "org",
+			Valid:  true,
+		},
+		LastName: sql.NullString{
+			String: "0",
+			Valid:  true,
+		},
+		Email:    "org0@example.co.uk",
+		Verified: true,
+		Role:     types.OrganizerRole,
+	}
+
+	t.Run("Create event organizer", func(t *testing.T) {
+		if err := userRepo.CreateUser(&organizer); err != nil {
+			t.Errorf("expected no error when creating organizer but got %v", err)
+		}
+	})
 
 	t.Run("Create events", func(t *testing.T) {
 		for _, event := range events {
+			event.Organizer = organizer.ID // need a valid organizer for the event
+
 			if err := eventRepo.CreateEvent(&event); err != nil {
 				t.Errorf("expected no error when creating event but got %v", err)
 			}

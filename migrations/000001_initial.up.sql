@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TYPE role AS ENUM ('user', 'admin', 'organizer');
 
 CREATE TABLE IF NOT EXISTS public.users (

@@ -32,7 +32,7 @@ func (r *sqlEventRepository) CreateEvent(event *models.EventModel) error {
 	event.BeforeCreate()
 
 	query := `INSERT INTO public.events (name, organizer_id, description, start_date, end_date, is_paid, event_type, country, city, slug, likes, follows, attendees)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`
 
 	err := r.database.QueryRow(query,
 		event.Name,
@@ -42,7 +42,7 @@ func (r *sqlEventRepository) CreateEvent(event *models.EventModel) error {
 		event.EndDate,
 		event.IsPaid,
 		event.Type,
-		event.Country,
+		event.CountryISO,
 		event.City,
 		event.Slug,
 		event.Likes,
@@ -73,7 +73,7 @@ func (r *sqlEventRepository) GetEventByID(id string) (*models.EventModel, error)
 		&event.EndDate,
 		&event.IsPaid,
 		&event.Type,
-		&event.Country,
+		&event.CountryISO,
 		&event.City,
 		&event.Slug,
 		&event.Likes,
@@ -114,7 +114,7 @@ func (r *sqlEventRepository) UpdateEvent(event *models.EventModel) error {
 		event.EndDate,
 		event.IsPaid,
 		event.Type,
-		event.Country,
+		event.CountryISO,
 		event.City,
 		event.Slug,
 		event.Likes,
