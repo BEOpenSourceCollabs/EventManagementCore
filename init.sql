@@ -6,5 +6,3 @@ CREATE DATABASE "event-mgmt-db"
     IS_TEMPLATE = False;
 
 \c event-mgmt-db;
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
