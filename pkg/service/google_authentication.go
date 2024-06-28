@@ -67,7 +67,7 @@ func (svc *GoogleJsonWebTokenAuthenticationService) ValidateGoogleSignIn(idToken
 
 	svc.logger.Infof("successfully verified google user %s", claims.Email)
 
-	token, err := svc.jwtService.Sign(JwtPayload{
+	token, err := svc.jwtService.SignAccessToken(JwtPayload{
 		Id:   existingUser.ID,
 		Role: existingUser.Role,
 	})
@@ -142,7 +142,7 @@ func (svc *GoogleJsonWebTokenAuthenticationService) ValidateGoogleSignUp(dto *dt
 		return nil, err
 	}
 
-	token, err := svc.jwtService.Sign(JwtPayload{
+	token, err := svc.jwtService.SignAccessToken(JwtPayload{
 		Id:   model.ID,
 		Role: model.Role,
 	})

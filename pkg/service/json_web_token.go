@@ -15,15 +15,23 @@ type JwtPayload struct {
 	Role types.Role
 }
 
+// RefreshTokenPayload represents json web token claims to be signed or that have been parsed.
+type RefreshTokenPayload struct {
+	Id string
+}
+
 // JsonWebTokenService for signing and parsing json web tokens.
 type JsonWebTokenService interface {
-	Sign(JwtPayload) (*string, error)
-	ParseSignedToken(string) (*JwtPayload, error)
+	SignAccessToken(JwtPayload) (*string, error)
+	ParseAccessToken(string) (*JwtPayload, error)
+	SignRefreshToken(RefreshTokenPayload) (*string, error)
+	ParseRefreshToken(string) (*RefreshTokenPayload, error)
 }
 
 // JsonWebTokenConfiguration settings for the json web token service.
 type JsonWebTokenConfiguration struct {
-	Secret string
+	AccessTokenSecret  string
+	RefreshTokenSecret string
 }
 
 type jsonWebTokenService struct {
@@ -39,27 +47,12 @@ func NewJsonWebTokenService(config *JsonWebTokenConfiguration, lw logging.LogWri
 	}
 }
 
-// Sign generates a signed JWT token for given payload using the provided secret.
-func (svc *jsonWebTokenService) Sign(payload JwtPayload) (*string, error) {
+// sign generates a signed JWT token for given payload using the provided secret.
+func sign(claims jwt.MapClaims, secret string) (*string, error) {
 	// Create a new token object, specifying signing method and claims
-
-	if len(payload.Id) < 1 {
-		return nil, fmt.Errorf("jwtPayload must contain an id")
-	}
-	if !payload.Role.IsValid() {
-		return nil, fmt.Errorf("jwtPayload must contain a valid role")
-	}
-
-	svc.logger.Debugf("signing payload with sub: '%s', role: '%s'", payload.Id, payload.Role)
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":  payload.Id,
-		"role": payload.Role,
-		"exp":  time.Now().Add(time.Hour * 1).Unix(),
-	})
-
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	// Sign and get the complete encoded token as a string using the secret
-	tokenString, err := token.SignedString([]byte(svc.config.Secret))
-	svc.logger.Debugf("signed payload: '%s'", tokenString)
+	tokenString, err := token.SignedString([]byte(secret))
 
 	if err != nil {
 		return nil, err
@@ -68,15 +61,14 @@ func (svc *jsonWebTokenService) Sign(payload JwtPayload) (*string, error) {
 	return &tokenString, nil
 }
 
-func (svc *jsonWebTokenService) ParseSignedToken(tokenString string) (*JwtPayload, error) {
+// parse validates signature of JWT token against provided secret, parses payload if successful and returns claims
+func parse(tokenString string, secret string) (jwt.MapClaims, error) {
 	//parse JWT token using secret and same algorithm that is used to sign.
-
-	svc.logger.Debugf("parsing signed token: '%s'", tokenString)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return token, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(svc.config.Secret), nil
+		return []byte(secret), nil
 	})
 
 	if err != nil {
@@ -84,12 +76,90 @@ func (svc *jsonWebTokenService) ParseSignedToken(tokenString string) (*JwtPayloa
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		svc.logger.Debugf("parsing token claims: id => '%s', role => '%s'", claims["sub"], claims["role"])
-		return &JwtPayload{
-			Id:   claims["sub"].(string),
-			Role: types.Role(claims["role"].(string)),
-		}, nil
+		return claims, nil
 	}
 
 	return nil, err
+}
+
+func (svc *jsonWebTokenService) SignAccessToken(payload JwtPayload) (*string, error) {
+
+	if len(payload.Id) < 1 {
+		return nil, fmt.Errorf("jwtPayload must contain an id")
+	}
+	if !payload.Role.IsValid() {
+		return nil, fmt.Errorf("jwtPayload must contain a valid role")
+	}
+
+	claims := jwt.MapClaims{
+		"sub":  payload.Id,
+		"role": payload.Role,
+		"exp":  time.Now().Add(time.Hour * 1).Unix(),
+	}
+
+	svc.logger.Debugf("signing acccess token payload with sub: '%s', role: '%s'", payload.Id, payload.Role)
+	token, err := sign(claims, svc.config.AccessTokenSecret)
+	svc.logger.Debugf("signed access token payload: '%s'", *token)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}
+
+func (svc *jsonWebTokenService) ParseAccessToken(tokenString string) (*JwtPayload, error) {
+
+	svc.logger.Debugf("parsing signed access token: '%s'", tokenString)
+	claims, err := parse(tokenString, svc.config.AccessTokenSecret)
+
+	if err != nil {
+		return nil, err
+	}
+
+	svc.logger.Debugf("parsed access token claims: id => '%s', role => '%s'", claims["sub"], claims["role"])
+
+	return &JwtPayload{
+		Id:   claims["sub"].(string),
+		Role: types.Role(claims["role"].(string)),
+	}, nil
+}
+
+func (svc *jsonWebTokenService) SignRefreshToken(payload RefreshTokenPayload) (*string, error) {
+	if len(payload.Id) < 1 {
+		return nil, fmt.Errorf("RefreshTokenPayload must contain an id")
+	}
+
+	week := time.Hour * 24 * 7
+
+	claims := jwt.MapClaims{
+		"sub": payload.Id,
+		"exp": time.Now().Add(week).Unix(), //7 day expiry
+	}
+
+	svc.logger.Debugf("signing refresh token payload with sub: '%s'", payload.Id)
+	token, err := sign(claims, svc.config.RefreshTokenSecret)
+	svc.logger.Debugf("signed refresh token payload: '%s'", *token)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}
+
+func (svc *jsonWebTokenService) ParseRefreshToken(token string) (*RefreshTokenPayload, error) {
+	svc.logger.Debug("validating access token")
+
+	claims, err := parse(token, svc.config.RefreshTokenSecret)
+
+	if err != nil {
+		return nil, err
+	}
+
+	svc.logger.Debugf("parsing refresh token claims: id => '%s'", claims["sub"])
+
+	return &RefreshTokenPayload{
+		Id: claims["sub"].(string),
+	}, nil
 }

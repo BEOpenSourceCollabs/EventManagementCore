@@ -64,7 +64,7 @@ func (svc *jsonWebTokenAuthenticationService) ValidateSignIn(dto *dtos.Login) (*
 		return nil, ErrInvalidCredentials
 	}
 
-	token, err := svc.jwtService.Sign(JwtPayload{
+	token, err := svc.jwtService.SignAccessToken(JwtPayload{
 		Id:   existingUser.ID,
 		Role: existingUser.Role,
 	})
