@@ -27,6 +27,16 @@ func NewSQLEventRepository(database *sql.DB) EventRepository {
 	return &sqlEventRepository{database: database}
 }
 
+func (r *sqlEventRepository) handleError(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrEventNotFound
+	}
+	if reflect.TypeOf(err) == reflect.TypeOf(&net.OpError{}) {
+		return ErrRepoConnErr
+	}
+	return err
+}
+
 // CreateEvent inserts a new event into the database.
 func (r *sqlEventRepository) CreateEvent(event *models.EventModel) error {
 	event.BeforeCreate()
@@ -60,8 +70,7 @@ func (r *sqlEventRepository) CreateEvent(event *models.EventModel) error {
 
 // GetEventByID retrieves a event from the database by its unique ID.
 func (r *sqlEventRepository) GetEventByID(id string) (*models.EventModel, error) {
-	query := `SELECT id, name, organizer_id, description, start_date, end_date, is_paid, event_type, country, city, slug, likes, follows, attendees, created_at, updated_at,
-				FROM public.events WHERE id = $1`
+	query := `SELECT id, name, organizer_id, description, start_date, end_date, is_paid, event_type, country, city, slug, likes, follows, attendees, created_at, updated_at FROM public.events WHERE id = $1`
 
 	event := &models.EventModel{}
 	err := r.database.QueryRow(query, id).Scan(
@@ -83,13 +92,7 @@ func (r *sqlEventRepository) GetEventByID(id string) (*models.EventModel, error)
 		&event.UpdatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrEventNotFound
-		}
-		if reflect.TypeOf(err) == reflect.TypeOf(&net.OpError{}) {
-			return nil, ErrRepoConnErr
-		}
-		return nil, ErrInvalidEventId
+		return nil, r.handleError(err)
 	}
 
 	return event, nil
@@ -98,7 +101,7 @@ func (r *sqlEventRepository) GetEventByID(id string) (*models.EventModel, error)
 // UpdateEvent update a event in the database.
 func (r *sqlEventRepository) UpdateEvent(event *models.EventModel) error {
 	event.BeforeUpdate()
-	query := `UPDATE public.events SET name = $1, organizer_id = $2, description = $3, start_date = $4, end_date = $5, is_paid = $6, event_type = $7, country = $8, city = $9, slug = $10, likes = $11, follows = $12, attendees = $13, WHERE id = $14`
+	query := `UPDATE public.events SET name = $1, organizer_id = $2, description = $3, start_date = $4, end_date = $5, is_paid = $6, event_type = $7, country = $8, city = $9, slug = $10, likes = $11, follows = $12, attendees = $13 WHERE id = $14`
 	// This is a guard to prevent any partial event from being submitted.
 	// Otherwise it would be possible to accidently empty out columns by passing empty/uninitialized values.
 	if event.CreatedAt.Unix() == 0 {
@@ -123,7 +126,7 @@ func (r *sqlEventRepository) UpdateEvent(event *models.EventModel) error {
 		event.ID,
 	)
 	if err != nil {
-		return err
+		return r.handleError(err)
 	}
 
 	if affected, err := rs.RowsAffected(); affected < 1 {
@@ -144,7 +147,7 @@ func (r *sqlEventRepository) DeleteEvent(id string) error {
 
 	rs, err := r.database.Exec(query, id)
 	if err != nil {
-		return err
+		return r.handleError(err)
 	}
 
 	if affected, err := rs.RowsAffected(); affected < 1 {
@@ -158,6 +161,5 @@ func (r *sqlEventRepository) DeleteEvent(id string) error {
 }
 
 var (
-	ErrEventNotFound  = errors.New("event not found")  // ErrEventNotFound is returned when a event is not found in the database.
-	ErrInvalidEventId = errors.New("invalid event id") // ErrEventNotFound is returned when a event id is invalid or malformed.
+	ErrEventNotFound = errors.New("event not found") // ErrEventNotFound is returned when a event is not found in the database.
 )

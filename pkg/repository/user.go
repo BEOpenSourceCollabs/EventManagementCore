@@ -29,6 +29,16 @@ func NewSQLUserRepository(database *sql.DB) UserRepository {
 	return &sqlUserRepository{database: database}
 }
 
+func (r *sqlUserRepository) handleError(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrUserNotFound
+	}
+	if reflect.TypeOf(err) == reflect.TypeOf(&net.OpError{}) {
+		return ErrRepoConnErr
+	}
+	return err
+}
+
 // CreateUser inserts a new user into the database.
 func (r *sqlUserRepository) CreateUser(user *models.UserModel) error {
 	user.BeforeCreate()
@@ -84,13 +94,7 @@ func (r *sqlUserRepository) GetUserByID(id string) (*models.UserModel, error) {
 		&user.AvatarUrl,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrUserNotFound
-		}
-		if reflect.TypeOf(err) == reflect.TypeOf(&net.OpError{}) {
-			return nil, ErrRepoConnErr
-		}
-		return nil, ErrInvalidUserId
+		return nil, r.handleError(err)
 	}
 
 	return user, nil
@@ -122,7 +126,7 @@ func (r *sqlUserRepository) UpdateUser(user *models.UserModel) error {
 		user.ID,
 	)
 	if err != nil {
-		return err
+		return r.handleError(err)
 	}
 
 	if affected, err := rs.RowsAffected(); affected < 1 {
@@ -143,7 +147,7 @@ func (r *sqlUserRepository) DeleteUser(id string) error {
 
 	rs, err := r.database.Exec(query, id)
 	if err != nil {
-		return err
+		return r.handleError(err)
 	}
 
 	if affected, err := rs.RowsAffected(); affected < 1 {
@@ -192,10 +196,7 @@ func (r *sqlUserRepository) GetUserByEmail(email string) (*models.UserModel, err
 		&user.AvatarUrl,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrUserNotFound
-		}
-		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+		return nil, r.handleError(err)
 	}
 
 	return user, nil
@@ -254,7 +255,6 @@ func (r *sqlUserRepository) InsertUser(user *models.UserModel) error {
 }
 
 var (
-	ErrUserNotFound  = errors.New("user not found")  // ErrUserNotFound is returned when a user is not found in the database.
-	ErrInvalidUserId = errors.New("invalid user id") // ErrUserNotFound is returned when a user id is invalid or malformed.
-	ErrRepoConnErr   = errors.New("repository connection lost")
+	ErrUserNotFound = errors.New("user not found") // ErrUserNotFound is returned when a user is not found in the database.
+	ErrRepoConnErr  = errors.New("repository connection lost")
 )
