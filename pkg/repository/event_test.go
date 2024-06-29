@@ -16,7 +16,7 @@ var (
 	events = []models.EventModel{
 		{
 			Name:        "Music Festival",
-			Type:        types.OnlineEventType,
+			Type:        types.OfflineEventType,
 			Description: "A test music festival",
 			StartDate:   time.Now().Add(time.Hour + 24),
 			EndDate:     time.Now().Add(time.Hour + 25),
@@ -71,11 +71,46 @@ func TestEventRepository_KitchenSink(t *testing.T) {
 	})
 
 	t.Run("Create events", func(t *testing.T) {
-		for _, event := range events {
-			event.Organizer = organizer.ID // need a valid organizer for the event
+		for i, _ := range events {
+			events[i].Organizer = organizer.ID // need a valid organizer for the event
 
-			if err := eventRepo.CreateEvent(&event); err != nil {
+			if err := eventRepo.CreateEvent(&events[i]); err != nil {
 				t.Errorf("expected no error when creating event but got %v", err)
+			}
+		}
+	})
+
+	t.Run("Update event", func(t *testing.T) {
+		events[0].Name = "Virtual Music Festival"
+		events[0].Type = types.BothEventType
+		if err := eventRepo.UpdateEvent(&events[0]); err != nil {
+			t.Errorf("expected no error when updating event but got %v", err)
+		}
+
+		// verify updated
+		loadedEvent, err := eventRepo.GetEventByID(events[0].ID)
+		if err != nil {
+			t.Errorf("expected no error when getting event by id '%s' but got %v", events[0].ID, err)
+		}
+		if loadedEvent.Name != events[0].Name {
+			t.Errorf("expected '%s' as updated event name but was '%s'", events[0].Name, loadedEvent.Name)
+		}
+		if loadedEvent.Type != events[0].Type {
+			t.Errorf("expected '%s' as updated event type but was '%s'", events[0].Type, loadedEvent.Type)
+		}
+	})
+
+	t.Run("Delete events", func(t *testing.T) {
+		for _, event := range events {
+			if err := eventRepo.DeleteEvent(event.ID); err != nil {
+				t.Errorf("expected no error when deleting event but got %v", err)
+			}
+			devnt, err := eventRepo.GetEventByID(event.ID)
+			if devnt != nil {
+				t.Errorf("expected deleted event to be nil but was %v", devnt)
+			}
+			if err == nil {
+				t.Errorf("expected error when attempting to get event by id after deletion")
 			}
 		}
 	})
