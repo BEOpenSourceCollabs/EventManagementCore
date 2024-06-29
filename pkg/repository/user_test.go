@@ -1,6 +1,7 @@
 package repository_test
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 
@@ -60,19 +61,37 @@ var (
 	}
 )
 
-func TestUserRepository_KitchenSink(t *testing.T) {
-	_, db, err := test.NewTestDatabaseWithContainer(test.TestDatabaseConfiguration{
+func TestUserRepository_CreateUser(t *testing.T) {
+	container, db, err := test.NewTestDatabaseWithContainer(test.TestDatabaseConfiguration{
 		RootRelativePath: "../../",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Clean up the container
-	// defer func() {
-	// 	if err := container.Terminate(context.Background()); err != nil {
-	// 		log.Fatalf("failed to terminate container: %s", err)
-	// 	}
-	// }()
+	defer container.Terminate(context.Background())
+
+	userRepo := repository.NewSQLUserRepository(db)
+	t.Run("Create user with empty sql.NullStrings", func(t *testing.T) {
+		minimalUser := models.UserModel{
+			Role: types.UserRole,
+		}
+
+		if err := userRepo.CreateUser(&minimalUser); err != nil {
+			t.Errorf("expected no error when creating user with empty sql.NullStrings but got %v", err)
+		}
+
+	})
+}
+
+func TestUserRepository_KitchenSink(t *testing.T) {
+	container, db, err := test.NewTestDatabaseWithContainer(test.TestDatabaseConfiguration{
+		RootRelativePath: "../../",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer container.Terminate(context.Background())
+
 	userRepo := repository.NewSQLUserRepository(db)
 
 	t.Run("Create users", func(t *testing.T) {
@@ -82,4 +101,9 @@ func TestUserRepository_KitchenSink(t *testing.T) {
 			}
 		}
 	})
+
+	// TODO:
+	// test update
+	// test delete
+	// test insert
 }
