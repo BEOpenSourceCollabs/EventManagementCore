@@ -132,3 +132,40 @@ func (authRouter *jwtAuthRoutes) HandleCheck(w http.ResponseWriter, r *http.Requ
 
 	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
 }
+
+// Handles validating refresh token & providing new access token
+func (authRouter *jwtAuthRoutes) HandleRefresh(w http.ResponseWriter, r *http.Request) {
+
+	cookie, err := r.Cookie(constants.REFRESH_TOKEN_COOKIE)
+
+	if err != nil {
+		authRouter.logger.Error(err, "error parsing refresh token cookie")
+
+		if err == http.ErrNoCookie {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthNoRefreshTokenCookie, http.StatusUnauthorized, []string{"No refresh token provided"})
+			return
+		}
+
+		utils.WriteInternalErrorJsonResponse(w)
+		return
+	}
+
+	accessToken, err := authRouter.authService.ValidateRefresh(cookie.Value)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidRefreshToken):
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidRefreshToken, http.StatusUnauthorized, nil)
+			return
+		case errors.Is(err, service.ErrUserNotFound):
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
+			return
+		default:
+			utils.WriteInternalErrorJsonResponse(w)
+			return
+		}
+	}
+
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, accessToken)
+
+}
