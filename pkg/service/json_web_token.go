@@ -149,7 +149,7 @@ func (svc *jsonWebTokenService) SignRefreshToken(payload RefreshTokenPayload) (*
 }
 
 func (svc *jsonWebTokenService) ParseRefreshToken(token string) (*RefreshTokenPayload, error) {
-	svc.logger.Debug("validating access token")
+	svc.logger.Debug("validating refresh token")
 
 	claims, err := parse(token, svc.config.RefreshTokenSecret)
 
