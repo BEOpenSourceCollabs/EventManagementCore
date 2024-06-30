@@ -47,6 +47,6 @@ jobs:
         last_ssh: |-
           cd $TARGET_DIR
           /usr/local/go/bin/go build -o bin/emc main.go
-          migrate -path=./migrations -database=$DB_DSN up
+          /usr/local/bin/migrate -path=./migrations -database=$DB_DSN up
           systemctl --user restart event-mgmt-core
   
