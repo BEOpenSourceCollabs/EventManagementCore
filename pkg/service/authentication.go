@@ -189,9 +189,9 @@ func (svc *jsonWebTokenAuthenticationService) AttachRefreshTokenCookie(w http.Re
 	cookie := &http.Cookie{
 		Name:     constants.REFRESH_TOKEN_COOKIE,
 		Value:    *refreshToken,
-		Path:     constants.REFRESHT_TOKEN_COOKIE_PATH, // The cookie will only be sent for requests to this path
-		HttpOnly: true,                                 // The cookie is inaccessible to JavaScript
-		Secure:   svc.config.IsProduction,              // The cookie will only be sent over HTTPS in production
+		Path:     constants.REFRESH_TOKEN_COOKIE_PATH, // The cookie will only be sent for requests to this path
+		HttpOnly: true,                                // The cookie is inaccessible to JavaScript
+		Secure:   svc.config.IsProduction,             // The cookie will only be sent over HTTPS in production
 		MaxAge:   int(week.Seconds()),
 	}
 
