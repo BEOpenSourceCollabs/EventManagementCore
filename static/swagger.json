@@ -233,6 +233,84 @@
         ]
       }
     },
+    "/auth/refresh": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "refresh",
+        "summary": "validates refresh token and returns new access token",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid refresh token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorAPIResponse"
+                    },
+                    {
+                      "properties": {
+                        "code": {
+                          "example": "NO_REFRESH_TOKEN_COOKIE"
+                        },
+                        "messages": {
+                          "example": [
+                            "No refresh token provided"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServerErrorResponse"
+                    },
+                    {
+                      "properties": {
+                        "messages": {
+                          "example": "could not create a refresh token"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users": {
       "post": {
         "tags": [
@@ -754,6 +832,22 @@
   },
   "components": {
     "schemas": {
+      "RefreshSuccessResponse": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RestAPIResponse"
+          },
+          {
+            "properties": {
+              "data": {
+                "type": "string",
+                "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+              }
+            }
+          }
+        ]
+      },
       "GoogleSignInRequest": {
         "required": [
           "id_token"
