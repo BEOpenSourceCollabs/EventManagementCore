@@ -13,12 +13,13 @@ import (
 )
 
 type googleAuthenticationRoutes struct {
-	gAuthService service.GoogleAuthenicationService
-	logger       logging.Logger
+	gAuthService   service.GoogleAuthenicationService
+	logger         logging.Logger
+	jwtAuthService service.AuthenticationService
 }
 
 // NewGoogleAuthenticationRoutes creates routes using GoogleAuthenicationService and mounts them to the provided router.
-func NewGoogleAuthenticationRoutes(router net.AppRouter, gAuthService service.GoogleAuthenicationService, lw logging.LogWriter) *googleAuthenticationRoutes {
+func NewGoogleAuthenticationRoutes(router net.AppRouter, gAuthService service.GoogleAuthenicationService, jwtAuthService service.AuthenticationService, lw logging.LogWriter) *googleAuthenticationRoutes {
 	routes := &googleAuthenticationRoutes{
 		gAuthService: gAuthService,
 		logger:       logging.NewContextLogger(lw, "GoogleAuthenticationRoutes"),
@@ -72,6 +73,9 @@ func (authRouter *googleAuthenticationRoutes) HandleGoogleSignUp(w http.Response
 		return
 	}
 
+	//attach refresh token cookie in response
+	authRouter.jwtAuthService.AttachRefreshTokenCookie(w, result.User.ID)
+
 	utils.WriteSuccessJsonResponse(w, http.StatusCreated, result)
 
 }
@@ -111,6 +115,8 @@ func (authRouter *googleAuthenticationRoutes) HandleGoogleSignIn(w http.Response
 		return
 	}
 
-	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
+	//attach refresh token cookie in response
+	authRouter.jwtAuthService.AttachRefreshTokenCookie(w, result.User.ID)
 
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
 }
