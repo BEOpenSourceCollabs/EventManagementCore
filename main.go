@@ -80,6 +80,9 @@ func main() {
 		userRepo,
 		jwtService,
 		lw,
+		&service.AuthenticationServiceConfiguration{
+			IsProduction: envConfig.Env.IsProduction(),
+		},
 	)
 
 	// initialize and mount routes
@@ -105,6 +108,7 @@ func main() {
 			jwtService,
 			lw,
 		),
+		authService,
 		lw,
 	)
 
