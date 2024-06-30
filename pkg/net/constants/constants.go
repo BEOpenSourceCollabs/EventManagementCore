@@ -1,9 +1,9 @@
 package constants
 
 const (
-	MAX_BODY_SIZE              = 5 * 1024 * 1024 //5MB body limit for HTTP request bodies
-	REFRESH_TOKEN_COOKIE       = "refresh_token"
-	REFRESHT_TOKEN_COOKIE_PATH = "/api/auth/refresh"
+	MAX_BODY_SIZE             = 5 * 1024 * 1024 //5MB body limit for HTTP request bodies
+	REFRESH_TOKEN_COOKIE      = "refresh_token"
+	REFRESH_TOKEN_COOKIE_PATH = "/api/auth/refresh"
 )
 
 type errorCodes struct {
