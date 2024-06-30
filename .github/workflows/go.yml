@@ -46,7 +46,7 @@ jobs:
           "." => $TARGET_DIR
         last_ssh: |-
           cd $TARGET_DIR
-          make compile
+          /usr/local/go/bin/go build -o bin/emc main.go
           migrate -path=./migrations -database=$DB_DSN up
           systemctl --user restart event-mgmt-core
   
