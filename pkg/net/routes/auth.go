@@ -34,6 +34,7 @@ func NewJsonWebTokenAuthenticationRoutes(router net.AppRouter, authService servi
 	router.Post("/api/auth/login", http.HandlerFunc(routes.HandleLogin))
 	router.Post("/api/auth/register", http.HandlerFunc(routes.HandleSignUp))
 	router.Get("/api/auth/check", protectMiddleware.BeforeNext(http.HandlerFunc(routes.HandleCheck)))
+	router.Get("/api/auth/refresh", http.HandlerFunc(routes.HandleRefresh))
 
 	// Add basic preflight handlers
 	router.Options("/api/auth/login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +46,11 @@ func NewJsonWebTokenAuthenticationRoutes(router net.AppRouter, authService servi
 	router.Options("/api/auth/check", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
+
+	router.Options("/api/auth/refresh", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
 	return routes
 }
 
@@ -74,6 +80,15 @@ func (authRouter *jwtAuthRoutes) HandleLogin(w http.ResponseWriter, r *http.Requ
 			utils.WriteInternalErrorJsonResponse(w)
 			return
 		}
+	}
+
+	//attach refresh token cookie to response
+	err = authRouter.authService.AttachRefreshTokenCookie(w, data.User.ID)
+
+	if err != nil {
+		authRouter.logger.Error(err, "error attaching refresh token cookie")
+		utils.WriteInternalErrorJsonResponse(w)
+		return
 	}
 
 	//return access token
@@ -131,4 +146,41 @@ func (authRouter *jwtAuthRoutes) HandleCheck(w http.ResponseWriter, r *http.Requ
 	}
 
 	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
+}
+
+// Handles validating refresh token & providing new access token
+func (authRouter *jwtAuthRoutes) HandleRefresh(w http.ResponseWriter, r *http.Request) {
+
+	cookie, err := r.Cookie(constants.REFRESH_TOKEN_COOKIE)
+
+	if err != nil {
+		authRouter.logger.Error(err, "error parsing refresh token cookie")
+
+		if err == http.ErrNoCookie {
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthNoRefreshTokenCookie, http.StatusUnauthorized, []string{"No refresh token provided"})
+			return
+		}
+
+		utils.WriteInternalErrorJsonResponse(w)
+		return
+	}
+
+	accessToken, err := authRouter.authService.ValidateRefresh(cookie.Value)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidRefreshToken):
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.AuthInvalidRefreshToken, http.StatusUnauthorized, nil)
+			return
+		case errors.Is(err, service.ErrUserNotFound):
+			utils.WriteErrorJsonResponse(w, constants.ErrorCodes.NotFound, http.StatusNotFound, []string{err.Error()})
+			return
+		default:
+			utils.WriteInternalErrorJsonResponse(w)
+			return
+		}
+	}
+
+	utils.WriteSuccessJsonResponse(w, http.StatusOK, accessToken)
+
 }

@@ -3,9 +3,12 @@ package service
 import (
 	"database/sql"
 	"errors"
+	"net/http"
+	"time"
 
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/logging"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/models"
+	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/constants"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/net/dtos"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/repository"
 	"github.com/BEOpenSourceCollabs/EventManagementCore/pkg/types"
@@ -22,6 +25,7 @@ var (
 	ErrUserNotFound        = errors.New("user not found")
 	ErrInvalidGoogleToken  = errors.New("google id token is invalid")
 	ErrGoogleClietIdNotSet = errors.New("google client id not configured")
+	ErrInvalidRefreshToken = errors.New("refresh token is invalid")
 )
 
 // AuthenticationService for signing up and logging in users.
@@ -29,6 +33,12 @@ type AuthenticationService interface {
 	ValidateSignIn(dto *dtos.Login) (*dtos.LoginSuccess, error)
 	ValidateSignUp(dto *dtos.Register) (string, error)
 	CheckUser(id string) (*dtos.LoginUser, error)
+	ValidateRefresh(refreshToken string) (*string, error)
+	AttachRefreshTokenCookie(w http.ResponseWriter, userId string) error
+}
+
+type AuthenticationServiceConfiguration struct {
+	IsProduction bool
 }
 
 // jsonWebTokenAuthenticationService implementation of the AuthenticationService using the JsonWebTokenService.
@@ -36,14 +46,16 @@ type jsonWebTokenAuthenticationService struct {
 	logger     logging.Logger
 	jwtService JsonWebTokenService
 	userRepo   repository.UserRepository
+	config     *AuthenticationServiceConfiguration
 }
 
 // NewJsonWebTokenAuthenticationService create a JWT flavoured AuthenticationService.
-func NewJsonWebTokenAuthenticationService(userRepo repository.UserRepository, jwtService JsonWebTokenService, lw logging.LogWriter) AuthenticationService {
+func NewJsonWebTokenAuthenticationService(userRepo repository.UserRepository, jwtService JsonWebTokenService, lw logging.LogWriter, config *AuthenticationServiceConfiguration) AuthenticationService {
 	return &jsonWebTokenAuthenticationService{
 		logger:     logging.NewContextLogger(lw, "JsonWebTokenAuthenticationService"),
 		jwtService: jwtService,
 		userRepo:   userRepo,
+		config:     config,
 	}
 }
 
@@ -64,7 +76,7 @@ func (svc *jsonWebTokenAuthenticationService) ValidateSignIn(dto *dtos.Login) (*
 		return nil, ErrInvalidCredentials
 	}
 
-	token, err := svc.jwtService.Sign(JwtPayload{
+	token, err := svc.jwtService.SignAccessToken(JwtPayload{
 		Id:   existingUser.ID,
 		Role: existingUser.Role,
 	})
@@ -131,5 +143,60 @@ func (svc *jsonWebTokenAuthenticationService) CheckUser(id string) (*dtos.LoginU
 		LastName:  existingUser.LastName.String,
 		Role:      existingUser.Role,
 	}, nil
+}
 
+func (svc *jsonWebTokenAuthenticationService) ValidateRefresh(refreshToken string) (*string, error) {
+
+	claims, err := svc.jwtService.ParseRefreshToken(refreshToken)
+
+	if err != nil {
+		svc.logger.Error(err, "error parsing refresh token")
+		return nil, ErrInvalidRefreshToken
+	}
+
+	existingUser, err := svc.userRepo.GetUserByID(claims.Id)
+
+	if err != nil {
+		svc.logger.Errorf(err, "unable to find user with id: %s", claims.Id)
+		return nil, ErrUserNotFound
+	}
+
+	accessToken, err := svc.jwtService.SignAccessToken(JwtPayload{
+		Id:   existingUser.ID,
+		Role: existingUser.Role,
+	})
+
+	if err != nil {
+		svc.logger.Error(err, "error signing accesstoken")
+		return nil, err
+	}
+
+	return accessToken, nil
+}
+
+func (svc *jsonWebTokenAuthenticationService) AttachRefreshTokenCookie(w http.ResponseWriter, userId string) error {
+
+	refreshToken, err := svc.jwtService.SignRefreshToken(RefreshTokenPayload{
+		Id: userId,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	week := time.Hour * 24 * 7
+
+	cookie := &http.Cookie{
+		Name:     constants.REFRESH_TOKEN_COOKIE,
+		Value:    *refreshToken,
+		Path:     constants.REFRESH_TOKEN_COOKIE_PATH, // The cookie will only be sent for requests to this path
+		HttpOnly: true,                                // The cookie is inaccessible to JavaScript
+		Secure:   svc.config.IsProduction,             // The cookie will only be sent over HTTPS in production
+		MaxAge:   int(week.Seconds()),
+	}
+
+	// Set the cookie
+	http.SetCookie(w, cookie)
+
+	return nil
 }
