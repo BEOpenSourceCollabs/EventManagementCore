@@ -22,6 +22,7 @@ var (
 	ErrUserNotFound        = errors.New("user not found")
 	ErrInvalidGoogleToken  = errors.New("google id token is invalid")
 	ErrGoogleClietIdNotSet = errors.New("google client id not configured")
+	ErrInvalidRefreshToken = errors.New("refresh token is invalid")
 )
 
 // AuthenticationService for signing up and logging in users.
@@ -29,6 +30,7 @@ type AuthenticationService interface {
 	ValidateSignIn(dto *dtos.Login) (*dtos.LoginSuccess, error)
 	ValidateSignUp(dto *dtos.Register) (string, error)
 	CheckUser(id string) (*dtos.LoginUser, error)
+	ValidateRefresh(refreshToken string) (*string, error)
 }
 
 // jsonWebTokenAuthenticationService implementation of the AuthenticationService using the JsonWebTokenService.
@@ -131,5 +133,34 @@ func (svc *jsonWebTokenAuthenticationService) CheckUser(id string) (*dtos.LoginU
 		LastName:  existingUser.LastName.String,
 		Role:      existingUser.Role,
 	}, nil
+}
+
+func (svc *jsonWebTokenAuthenticationService) ValidateRefresh(refreshToken string) (*string, error) {
+
+	claims, err := svc.jwtService.ParseRefreshToken(refreshToken)
+
+	if err != nil {
+		svc.logger.Error(err, "error parsing refresh token")
+		return nil, ErrInvalidRefreshToken
+	}
+
+	existingUser, err := svc.userRepo.GetUserByID(claims.Id)
+
+	if err != nil {
+		svc.logger.Errorf(err, "unable to find user with id: %s", claims.Id)
+		return nil, ErrUserNotFound
+	}
+
+	accessToken, err := svc.jwtService.SignAccessToken(JwtPayload{
+		Id:   existingUser.ID,
+		Role: existingUser.Role,
+	})
+
+	if err != nil {
+		svc.logger.Error(err, "error signing accesstoken")
+		return nil, err
+	}
+
+	return accessToken, nil
 
 }
