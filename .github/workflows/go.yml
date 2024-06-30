@@ -11,7 +11,6 @@ on:
 
 env:
   TARGET_DIR: /home/${{secrets.SSH_USERNAME}}/apps/event-mgmt-core
-  SERVICE_DIR: /home/${{secrets.SSH_USERNAME}}/.config/systemd/user
   DB_DSN: "postgres://${{secrets.DATABASE_USER}}:${{secrets.DATABASE_PASSWORD}}@${{secrets.DATABASE_HOST}}:${{secrets.DATABASE_PORT}}/${{secrets.DATABASE_NAME}}?sslmode=${{secrets.DATABASE_SSL_MODE}}"
 
 jobs:
@@ -32,10 +31,6 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-    # Build source
-    - name: Build
-      run: go build -o bin/emc main.go
-
     # Deploys all the source (currently).
     # Might be better to deploy only the compiled binary and do additional setup.
     - name: Remote deploy
@@ -48,47 +43,9 @@ jobs:
           rm -rf $TARGET_DIR
           mkdir -p $TARGET_DIR
         scp: |-
-          "./bin/*" => $TARGET_DIR
-          "./migrations" => $TARGET_DIR
-          "./init.sql" => $TARGET_DIR
+          "." => $TARGET_DIR
         last_ssh: |-
           cd $TARGET_DIR
-
-          # => create environment file
-          cat > .env <<EOF
-          DATABASE_HOST=${{secrets.DATABASE_HOST}}
-          DATABASE_USER=${{secrets.DATABASE_USER}}
-          DATABASE_PASSWORD=${{secrets.DATABASE_PASSWORD}}
-          DATABASE_NAME=${{secrets.DATABASE_NAME}}
-          DATABASE_PORT=${{secrets.DATABASE_PORT}}
-          DATABASE_SSL_MODE=${{secrets.DATABASE_SSL_MODE}}
-
-          REFRESH_TOKEN_SECRET=${{secrets.REFRESH_TOKEN_SECRET}}
-          ACCESS_TOKEN_SECRET=${{secrets.ACCESS_TOKEN_SECRET}}
-          EOF
-
-          # => run migrations - migrations should be setup on server.
-          if ! migrate -path=./migrations -database=$DB_DSN up &> /dev/null then
-            echo "ensure go-migrate is setup on the remote"
-            exit 1
-          fi
-
-          # => create user systemd directory
-          if [[ ! -d "$SERVICE_DIR" ]]; then
-            mkdir -p $SERVICE_DIR
-            cat > $SERVICE_DIR/event-mgmt-core.service <<EOF
-            [Unit]
-            User=cicd
-            Description=Event Management Core
-            After=network.target
-
-            [Service]
-            ExecStart=$TARGET_DIR/emc
-            Restart=on-failure
-            EOF
-
-            systemctl --user start event-mgmt-core
-            systemctl --user enable event-mgmt-core
-          else
-            systemctl --user restart event-mgmt-core
-          fi
+          migrate -path=./migrations -database=$DB_DSN up
+          systemctl --user restart event-mgmt-core
+  
