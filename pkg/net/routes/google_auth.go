@@ -74,7 +74,13 @@ func (authRouter *googleAuthenticationRoutes) HandleGoogleSignUp(w http.Response
 	}
 
 	//attach refresh token cookie in response
-	authRouter.jwtAuthService.AttachRefreshTokenCookie(w, result.User.ID)
+	err = authRouter.jwtAuthService.AttachRefreshTokenCookie(w, result.User.ID)
+
+	if err != nil {
+		authRouter.logger.Error(err, "error attaching refresh token cookie")
+		utils.WriteInternalErrorJsonResponse(w)
+		return
+	}
 
 	utils.WriteSuccessJsonResponse(w, http.StatusCreated, result)
 
@@ -116,7 +122,13 @@ func (authRouter *googleAuthenticationRoutes) HandleGoogleSignIn(w http.Response
 	}
 
 	//attach refresh token cookie in response
-	authRouter.jwtAuthService.AttachRefreshTokenCookie(w, result.User.ID)
+	err = authRouter.jwtAuthService.AttachRefreshTokenCookie(w, result.User.ID)
+
+	if err != nil {
+		authRouter.logger.Error(err, "error attaching refresh token cookie")
+		utils.WriteInternalErrorJsonResponse(w)
+		return
+	}
 
 	utils.WriteSuccessJsonResponse(w, http.StatusOK, result)
 }
