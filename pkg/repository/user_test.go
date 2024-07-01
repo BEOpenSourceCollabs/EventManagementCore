@@ -95,15 +95,59 @@ func TestUserRepository_KitchenSink(t *testing.T) {
 	userRepo := repository.NewSQLUserRepository(db)
 
 	t.Run("Create users", func(t *testing.T) {
-		for _, user := range users {
-			if err := userRepo.CreateUser(&user); err != nil {
+		for i := range users {
+			if err := userRepo.CreateUser(&users[i]); err != nil {
 				t.Errorf("expected no error when creating user but got %v", err)
 			}
 		}
 	})
 
-	// TODO:
-	// test update
+	t.Run("Update user without loading first", func(t *testing.T) {
+		if err := userRepo.UpdateUser(&models.UserModel{Model: models.Model{ID: users[0].ID}, Username: "Updated"}); err == nil {
+			t.Error("expected error while attempting to update a user without fully loading the user first")
+		}
+	})
+
+	t.Run("Update user", func(t *testing.T) {
+		users[0].Username = "Updated"
+		if err := userRepo.UpdateUser(&users[0]); err != nil {
+			t.Errorf("expected no error when updating user but got %v", err)
+		}
+
+		loaded, err := userRepo.GetUserByID(users[0].ID)
+		if err != nil {
+			t.Errorf("expected no error when getting user by id but got %v", err)
+		}
+		if loaded.Username != "Updated" {
+			t.Errorf("expected loaded users username to be updated to 'Updated' but was '%s'", loaded.Username)
+		}
+	})
+
+	t.Run("Get user by email", func(t *testing.T) {
+		loaded, err := userRepo.GetUserByEmail(users[0].Email)
+		if err != nil {
+			t.Errorf("expected no error when getting user by email but got %v", err)
+		}
+		if loaded.ID != users[0].ID {
+			t.Errorf("expected loaded users id to match '%s' but was '%s'", users[0].ID, loaded.ID)
+		}
+	})
+
 	// test delete
+	t.Run("Delete users", func(t *testing.T) {
+		for _, user := range users {
+			if err := userRepo.DeleteUser(user.ID); err != nil {
+				t.Errorf("expected no error when deleting user but got %v", err)
+			}
+			dusr, err := userRepo.GetUserByID(user.ID)
+			if dusr != nil {
+				t.Errorf("expected deleted user to be nil but was %v", dusr)
+			}
+			if err == nil {
+				t.Errorf("expected error when attempting to get user by id after deletion")
+			}
+		}
+	})
+
 	// test insert
 }

@@ -71,7 +71,7 @@ func TestEventRepository_KitchenSink(t *testing.T) {
 	})
 
 	t.Run("Create events", func(t *testing.T) {
-		for i, _ := range events {
+		for i := range events {
 			events[i].Organizer = organizer.ID // need a valid organizer for the event
 
 			if err := eventRepo.CreateEvent(&events[i]); err != nil {
