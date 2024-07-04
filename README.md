@@ -1,4 +1,5 @@
-# Event Management System
+# Event Management System 
+[![Go](https://github.com/BEOpenSourceCollabs/EventManagementCore/actions/workflows/go.yml/badge.svg)](https://github.com/BEOpenSourceCollabs/EventManagementCore/actions/workflows/go.yml)
 
 User management - login / sign up / roles assigned to users  ( organisers, admins and normal users) 
 
