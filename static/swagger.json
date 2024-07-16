@@ -11,6 +11,15 @@
   "servers": [
     {
       "url": "http://localhost:8081/api"
+    },
+    {
+      "url": "https://api.event-local.online/api"
+    },
+    {
+      "url": "https://dev-api.event-local.online/api"
+    },
+    {
+      "url": "https://qa-api.event-local.online/api"
     }
   ],
   "tags": [
