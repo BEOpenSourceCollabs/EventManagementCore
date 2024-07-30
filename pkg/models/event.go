@@ -25,6 +25,15 @@ type EventModel struct {
 	Attendees   int64           `db:"attendees" json:"attendees"`
 }
 
+// BeforeCreate overrides model lifecycle hook
+func (m *EventModel) BeforeCreate() error {
+	m.Likes = 0
+	m.Follows = 0
+	m.Attendees = 0
+	// TODO: generate value for slug
+	return nil
+}
+
 // BeforeUpdate overrides model lifecycle hook, updating the updated_at time.
 func (m *EventModel) BeforeUpdate() error {
 	m.UpdatedAt = time.Now()
