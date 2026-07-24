@@ -1,6 +1,20 @@
 version: "3.8"
 
 services:
+
+  db:
+    image: postgres:18
+    container_name: event-mgmt-postgres
+    restart: always
+    ports:
+      - 5432:5432
+    env_file:
+      - db.env
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - event-mgmt-network
     
   event-mgmt-core:
     container_name: event-mgmt-core
@@ -26,20 +40,6 @@ services:
       - event-mgmt-network
     ports: 
       - 8081:8081
-
-  db:
-    image: postgres
-    container_name: event-mgmt-postgres
-    restart: always
-    ports:
-      - 5432:5432
-    env_file:
-      - db.env
-    volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - event-mgmt-network
 
   pgadmin:
     image: dpage/pgadmin4
@@ -73,9 +73,8 @@ configs:
       }}}
 
 volumes:
-  db_data:
+  postgres_data:
   pgadmin_data:
-    driver: local
 
 networks:
   event-mgmt-network:
